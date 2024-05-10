@@ -45,8 +45,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: common_db
+    user: postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "common_db"]
+      test: [ "CMD-SHELL", "pg_isready", "-d", "common_db", "-U", "postgres"]
       interval: 10s
       timeout: 10s
       retries: 3

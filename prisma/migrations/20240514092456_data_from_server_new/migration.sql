@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "dataFromSensor" ADD COLUMN     "created_at" TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP;

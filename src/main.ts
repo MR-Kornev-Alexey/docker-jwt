@@ -2,7 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { join } from 'path'; // Импортируем функцию join из модуля path
-import express from 'express'; // Импортируем express
+import express from 'express';
+import { GetDataSensorService} from './socketClient/getDataSensor.service'; // Импортируем express
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,6 +38,9 @@ async function bootstrap() {
   expressApp.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
   // Передаем обработчик статических файлов в Nest
   app.use(expressApp);
+  // Инициализация сокет-клиента
+  const socketClientService = app.get(GetDataSensorService);
+  await socketClientService.sendAndScheduleRequest();
 
   await app.listen(5000);
 }

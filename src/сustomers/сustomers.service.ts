@@ -1,6 +1,7 @@
 import {Injectable, HttpStatus} from '@nestjs/common';
 import {PrismaService} from 'src/prisma/prisma.service';
 import {additionalDataDto} from "../auth/dto/additionalData.dto";
+import e from 'express';
 
 @Injectable()
 export class CustomersService {
@@ -130,7 +131,12 @@ export class CustomersService {
                 }
             }
         );
-        return {statusCode: HttpStatus.OK, message: "Пользователь найден", customer: findCustomer};
+        if(findCustomer){
+            return {statusCode: HttpStatus.OK, message: "Пользователь найден", customer: findCustomer};
+        } else {
+            return {statusCode: HttpStatus.NOT_FOUND, message: "Пользователь не найден", customer: ''}
+        }
+
     }
 
     async createCustomersAddData(dto: any) {

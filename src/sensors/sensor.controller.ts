@@ -38,6 +38,15 @@ export class SensorController {
     async getAllDataAboutOneSensor(@Body() dto: {email: string, id: string}) {
         return await this.sensorService.getAllDataAboutOneSensor(dto);
     }
+    @Post('set_request_data_for_sensor')
+    @HttpCode(200)
+    async setRequestDataForOneSensor(@Body() dto: {email: string, requestDataForSensor: any}) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorService.setRequestDataForOneSensor(dto);
+    }
     @Post('init_all_new_type_sensor')
     @HttpCode(200)
     async initAllNewTypeSensor(@Body() dto: any) {
@@ -49,7 +58,6 @@ export class SensorController {
     async setAdditionalDataForSensor(@Body() dto: any) {
         return await this.sensorService.setAdditionalDataForSensor(dto);
     }
-
 
     @Post('set_log_data_for_sensor')
     @HttpCode(200)

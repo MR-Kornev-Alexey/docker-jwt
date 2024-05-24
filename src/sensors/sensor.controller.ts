@@ -89,6 +89,15 @@ export class SensorController {
         return await this.sensorService.importNewSensorsToObject(dto);
     }
 
+    @Post('change_status_one_sensor_from_api')
+    @HttpCode(200)
+    async changeStatusOneSensor(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorService.changeStatusOneSensor(dto);
+    }
     @Post('delete_one_sensor_from_api')
     @HttpCode(200)
     async deleteOneSensorFromApi(@Body() dto: any) {

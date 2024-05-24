@@ -15,11 +15,14 @@ import {SensorService} from "./sensors/sensor.service";
 import { SocketClientService } from './socketClient/socketClient.service';
 import { GetDataSensorService } from './socketClient/getDataSensor.service';
 import { SocketClientModule } from './socketClient/socketClient.Module';
+import { SseModule } from './sse/sse.module';
+import { SensorsDataController } from './sensors-data/sensor-data.controller';
+import { SensorsDataService } from './sensors-data/sensor-data.service';
 
 @Module({
-  controllers: [AppController, CustomersController, OrganizationController, ObjectController, SensorController],
-  providers: [AppService, CustomersService, OrganizationService, ObjectService, CheckService, SensorService, SocketClientService, GetDataSensorService],
-  imports: [AuthModule, PrismaModule, SocketClientModule],
+  controllers: [AppController, CustomersController, OrganizationController, ObjectController, SensorController, SensorsDataController],
+  providers: [AppService, CustomersService, OrganizationService, ObjectService, CheckService, SensorService, SocketClientService, GetDataSensorService, SensorsDataService],
+  imports: [AuthModule, PrismaModule, SocketClientModule, SseModule],
   exports: [CheckService]
 })
 export class AppModule {}

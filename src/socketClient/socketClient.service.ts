@@ -3,9 +3,6 @@ import * as net from 'net';
 
 @Injectable()
 export class SocketClientService {
-  // private readonly IP = '192.168.8.101';
-  // private readonly PORT = 5000;
-  private readonly request1 = Buffer.from([0x7E, 0x9B, 0x01, 0x02, 0x98, 0x7E]);
 sendRequest(ip: string, port: number, code: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const hexValues = code.split(' ').map(hex => parseInt(hex, 16));

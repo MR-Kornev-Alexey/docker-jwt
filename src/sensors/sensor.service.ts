@@ -5,6 +5,7 @@ import { CheckService } from '../check/check.service';
 import { sensorFormInput } from '../types/sensorFormInput';
 import * as path from 'path';
 import * as fs from 'fs';
+import { GetDataSensorService } from '../socketClient/getDataSensor.service';
 
 interface JSONData {
   [key: string]: {
@@ -16,9 +17,11 @@ interface JSONData {
 
 @Injectable()
 export class SensorService {
+
   constructor(
     private dbService: PrismaService,
-    private checkService: CheckService, // Внедряем CheckService
+    private checkService: CheckService,
+    private getDataSensorService: GetDataSensorService
   ) {
   }
 
@@ -299,7 +302,57 @@ export class SensorService {
     }
   }
 
-
+  async changeStatusOneSensor(dto: any) {
+    console.log('dto -', dto);
+    try {
+      const sensor = await this.dbService.new_Sensor.findUnique({
+        where: {
+          id: dto.id
+        },
+      });
+      if (!sensor) {
+        console.log(`Датчик с идентификатором ${dto.id} не найден`);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message:`Датчик с идентификатором ${dto.id} не найден`,
+        };
+      }
+      // Обновляем значение поля run на противоположное
+      const updatedSensor = await this.dbService.new_Sensor.update({
+        where: {
+          id: dto.id,
+        },
+        data: {
+          run: !sensor.run,
+        },
+      });
+      if (updatedSensor) {
+        const allSensors = await this.dbService.new_Sensor.findMany({
+          include: {
+            object: true,
+            additional_sensor_info: true, // Включаем связанную модель организации
+            sensor_operation_log: true, // Включаем связанные сенсоры
+            files: true,
+            requestSensorInfo: true
+          },
+        });
+        await this.getDataSensorService.sendAndScheduleRequest();
+        return {
+          statusCode: HttpStatus.OK, message: 'Активность датчика успешно изменена', allSensors: allSensors};
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при изменении датчика'
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при изменении датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
   async deleteOneSensorFromApi(dto: any) {
     console.log('dto -', dto);
     try {

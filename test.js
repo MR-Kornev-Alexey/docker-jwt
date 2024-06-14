@@ -6,7 +6,7 @@ const PORT = 5000;
 
 console.log('start');
 // Запрос
-const request = Buffer.from([0x7E, 0x9B, 0x01, 0x29, 0xB3, 0x7E]);
+const request = Buffer.from([0x7E, 0x9B, 0x01, 0x03, 0x99, 0x7E]);
 const request1 = Buffer.from([0x03, 0x86]);
 // const request = Buffer.from([0x7E, 0x9B, 0x01, 0x01, 0x9B, 0x7E]);
 
@@ -75,5 +75,5 @@ function sendRequest1() {
 }
 
 // Отправляем запрос каждые 10 секунд
-setInterval(sendRequest, 8000);
-setInterval(sendRequest1, 5000);
+setInterval(sendRequest, 10000);
+// setInterval(sendRequest1, 5000);

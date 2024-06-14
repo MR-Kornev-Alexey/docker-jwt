@@ -21,7 +21,7 @@ export class SensorService {
   constructor(
     private dbService: PrismaService,
     private checkService: CheckService,
-    private getDataSensorService: GetDataSensorService
+    private getDataSensorService: GetDataSensorService,
   ) {
   }
 
@@ -164,6 +164,7 @@ export class SensorService {
         additional_sensor_info: true, // Включаем связанную модель организации
         sensor_operation_log: true, // Включаем связанные сенсоры
         files: true,
+        requestSensorInfo: true,
       },
     });
     return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
@@ -176,29 +177,44 @@ export class SensorService {
 
   async createNewSensorToObject(dto: sensorFormInput) {
     console.log('dto -- createNewSensorToObject', dto);
+
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (checkAccess) {
-      try {
-        // Создаем новый объект в базе данных
-        const createSensor = await this.dbService.new_Sensor.create({
-          data: dto.sensorsData,
-        });
-        if (createSensor) {
-          return await this.getAllSensorsFromDb();
-        } else {
-          // Если создание объекта не удалось, выбрасываем ошибку
-          throw new Error('Ошибка при записи данных о датчике');
-        }
-      } catch (error) {
-        // Обрабатываем ошибку при создании объекта
-        return {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Ошибка 500 при записи данных о датчике',
-        };
-      }
-    } else {
-      // Если доступ запрещен, возвращаем соответствующий статус и сообщение
+    if (!checkAccess) {
       return { statusCode: HttpStatus.FORBIDDEN, message: 'Доступ запрещен' };
+    }
+
+    const requestDataToDB = dto.requestData;
+
+    try {
+      // Создаем новый объект в базе данных
+      const createSensor = await this.dbService.new_Sensor.create({
+        data: dto.sensorsData,
+      });
+
+      if (!createSensor) {
+        throw new Error('Ошибка при записи данных о датчике');
+      }
+
+      console.log('createSensor -- ', createSensor);
+
+      requestDataToDB.sensor_id = createSensor.id;
+      console.log('requestDataToDB -- ', requestDataToDB);
+
+      const createDataRequest = await this.dbService.requestSensorInfo.create({
+        data: requestDataToDB,
+      });
+
+      if (!createDataRequest) {
+        throw new Error('Ошибка при записи данных запроса о датчике');
+      }
+
+      return await this.getAllSensorsFromDb();
+    } catch (error) {
+      console.error('Ошибка при создании объекта:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи данных о датчике',
+      };
     }
   }
 
@@ -229,7 +245,7 @@ export class SensorService {
           additional_sensor_info: true,
           sensor_operation_log: true,
           files: true,
-          requestSensorInfo: true
+          requestSensorInfo: true,
         },
       });
       return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
@@ -302,19 +318,210 @@ export class SensorService {
     }
   }
 
+  async changeDesignationOneSensorFrom(dto: any) {
+    console.log('dto -', dto);
+    try {
+      // Проверяем наличие датчика в базе данных
+      const sensor = await this.dbService.new_Sensor.findFirst({
+        where: { id: dto.id },
+      });
+
+      if (!sensor) {
+        const errorMessage = `Датчик с идентификатором ${dto.id} не найден`;
+        console.log(errorMessage);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: errorMessage,
+        };
+      }
+      const updatedSensor = await this.dbService.new_Sensor.update({
+        where: { id: dto.id },
+        data: { designation: dto.designation },
+      });
+      // Получаем обновленный датчик с вложенными данными
+      const oneSensor = await this.dbService.new_Sensor.findFirst({
+        where: { id: dto.id },
+        include: {
+          object: true,
+          additional_sensor_info: true,
+          sensor_operation_log: true,
+          files: true,
+          requestSensorInfo: true,
+        },
+      });
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное выполнение операции',
+        oneSensor,
+      };
+    } catch (error) {
+      console.error('Ошибка при изменении датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
+
+  async changeValueOneSensor(dto: any) {
+    console.log('dto -', dto);
+    try {
+      // Проверяем наличие датчика в базе данных
+      const sensor = await this.dbService.requestSensorInfo.findFirst({
+        where: { sensor_id: dto.id },
+      });
+
+      if (!sensor) {
+        const errorMessage = `Датчик с идентификатором ${dto.id} не найден`;
+        console.log(errorMessage);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: errorMessage,
+        };
+      }
+
+      // Обновляем значение поля min или max на основе флага
+      const fieldToUpdate = dto.flag === 'min' ? 'min_base' : dto.flag === 'max' ? 'max_base' : null;
+
+      if (!fieldToUpdate) {
+        const errorMessage = `Недопустимый флаг: ${dto.flag}`;
+        console.log(errorMessage);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: errorMessage,
+        };
+      }
+
+      const updatedSensor = await this.dbService.requestSensorInfo.update({
+        where: { id: sensor.id },
+        data: { [fieldToUpdate]: dto.value },
+      });
+
+      // Получаем обновленный датчик с вложенными данными
+      const oneSensor = await this.dbService.new_Sensor.findFirst({
+        where: { id: dto.id },
+        include: {
+          object: true,
+          additional_sensor_info: true,
+          sensor_operation_log: true,
+          files: true,
+          requestSensorInfo: true,
+        },
+      });
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное выполнение операции',
+        oneSensor,
+      };
+    } catch (error) {
+      console.error('Ошибка при изменении датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
+
+  async changeNullForAllCharts(dto: any) {
+    console.log('dto -', dto);
+    try {
+      const allSensorsInfo = await this.dbService.requestSensorInfo.findMany();
+      if(!dto.flag) {
+        for (const sensorInfo of allSensorsInfo) {
+          const { id, base_zero, last_base_value } = sensorInfo;
+
+          // Обновляем запись с новыми значениями
+          await this.dbService.requestSensorInfo.update({
+            where: { id },
+            data: {
+              base_zero: last_base_value
+            },
+          });
+        }
+      } else {
+        for (const sensorInfo of allSensorsInfo) {
+          const { id, base_zero, last_base_value } = sensorInfo;
+          // Обновляем запись с новыми значениями
+          await this.dbService.requestSensorInfo.update({
+            where: { id },
+            data: {
+              last_base_value: base_zero,
+              base_zero: 0,
+            },
+          });
+        }
+      }
+      return await this.getAllSensorsFromDb()
+    } catch (error) {
+      console.error('Ошибка при изменении датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
+
+  async setNullForOneSensor(dto: any) {
+    console.log('dto -', dto);
+    try {
+      const sensor = await this.dbService.requestSensorInfo.findFirst({
+        where: {
+          sensor_id: dto.id,
+        },
+      });
+      let updatedSensor;
+      if (dto.flag === 'set') {
+        updatedSensor = await this.dbService.requestSensorInfo.update({
+          where: {
+            id: sensor.id,
+          },
+          data: {
+            base_zero: sensor.last_base_value,
+          },
+        });
+      } else {
+        updatedSensor = await this.dbService.requestSensorInfo.update({
+          where: {
+            id: sensor.id,
+          },
+          data: {
+            base_zero: 0,
+          },
+        });
+      }
+
+      if (updatedSensor) {
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: updatedSensor };
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при обнулении датчика',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при изменении датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
+
   async changeStatusOneSensor(dto: any) {
     console.log('dto -', dto);
     try {
       const sensor = await this.dbService.new_Sensor.findUnique({
         where: {
-          id: dto.id
+          id: dto.id,
         },
       });
       if (!sensor) {
         console.log(`Датчик с идентификатором ${dto.id} не найден`);
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message:`Датчик с идентификатором ${dto.id} не найден`,
+          message: `Датчик с идентификатором ${dto.id} не найден`,
         };
       }
       // Обновляем значение поля run на противоположное
@@ -327,22 +534,23 @@ export class SensorService {
         },
       });
       if (updatedSensor) {
-        const allSensors = await this.dbService.new_Sensor.findMany({
+        const oneSensor = await this.dbService.new_Sensor.findFirst({
+          where: {
+            id: dto.id,
+          },
           include: {
             object: true,
-            additional_sensor_info: true, // Включаем связанную модель организации
-            sensor_operation_log: true, // Включаем связанные сенсоры
+            additional_sensor_info: true,
+            sensor_operation_log: true,
             files: true,
-            requestSensorInfo: true
+            requestSensorInfo: true,
           },
         });
-        await this.getDataSensorService.sendAndScheduleRequest();
-        return {
-          statusCode: HttpStatus.OK, message: 'Активность датчика успешно изменена', allSensors: allSensors};
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
       } else {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Ошибка 500 при изменении датчика'
+          message: 'Ошибка 500 при изменении датчика',
         };
       }
     } catch (error) {
@@ -353,6 +561,85 @@ export class SensorService {
       };
     }
   }
+
+  async changeWarningOneSensor(dto: any) {
+    console.log('dto -', dto);
+    try {
+      const sensor = await this.dbService.requestSensorInfo.findFirst({
+        where: {
+          sensor_id: dto.sensor_id,
+        },
+      });
+      if (!sensor) {
+        console.log(`Датчик с идентификатором ${dto.sensor_id} не найден`);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Датчик с идентификатором ${dto.sensor_id} не найден`,
+        };
+      }
+
+      const updatedSensor = await this.dbService.requestSensorInfo.update({
+        where: {
+          id: sensor.id,
+        },
+        data: {
+          warning: !sensor.warning,
+        },
+      });
+      if (updatedSensor) {
+        const oneSensor = await this.dbService.new_Sensor.findFirst({
+          where: {
+            id: dto.sensor_id,
+          },
+          include: {
+            object: true,
+            additional_sensor_info: true,
+            sensor_operation_log: true,
+            files: true,
+            requestSensorInfo: true,
+          },
+        });
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при изменении статуса  датчика',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при изменении статуса датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении статуса датчика',
+      };
+    }
+  }
+
+  async changeTimeRequestSensors(dto: any) {
+    console.log('dto -', dto);
+    try {
+      const setTimeRequestForAllSensors = await this.dbService.requestSensorInfo.updateMany({
+        data: {
+          periodicity: dto.periodicity, // New periodicity value
+        },
+      });
+      if (setTimeRequestForAllSensors) {
+        return { statusCode: HttpStatus.OK, message: 'Время запроса успешно изменено' };
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка при изменении времени запроса датчиков',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при изменении времени запроса датчиков', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка при изменении времени запроса датчиков',
+      };
+    }
+  }
+
   async deleteOneSensorFromApi(dto: any) {
     console.log('dto -', dto);
     try {
@@ -387,13 +674,28 @@ export class SensorService {
           where: { sensor_id: dto.id },
         });
       }
-
+      const requestDataSensor = await this.dbService.requestSensorInfo.findMany({
+        where: { sensor_id: dto.id },
+      });
+      if (requestDataSensor.length > 0) {
+        await this.dbService.requestSensorInfo.deleteMany({
+          where: { sensor_id: dto.id },
+        });
+      }
       // Удаляем датчик по его ID
       await this.dbService.new_Sensor.delete({
         where: { id: dto.id },
       });
-
-      return { statusCode: HttpStatus.OK, message: 'Датчик успешно удален из базы данных' };
+      const allSensors = await this.dbService.new_Sensor.findMany({
+        include: {
+          object: true,
+          additional_sensor_info: true, // Включаем связанную модель организации
+          sensor_operation_log: true, // Включаем связанные сенсоры
+          files: true,
+          requestSensorInfo: true,
+        },
+      });
+      return { statusCode: HttpStatus.OK, message: 'Датчик успешно удален из базы данных', allSensors: allSensors };
     } catch (error) {
       console.error('Ошибка при удалении датчика:', error);
       return {
@@ -415,6 +717,40 @@ export class SensorService {
       });
   }
 
+  async changeNetNumberForSensor(dto: any) {
+    console.log('dto -', dto);
+    // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
+    try {
+      const updatedSensor = await this.dbService.new_Sensor.update({
+        where: { id: dto.id },
+        data: { network_number: Number(dto.network_number) },
+      });
+      if (updatedSensor) {
+        const allSensors = await this.dbService.new_Sensor.findMany({
+          include: {
+            object: true,
+            additional_sensor_info: true, // Включаем связанную модель организации
+            sensor_operation_log: true, // Включаем связанные сенсоры
+            files: true,
+            requestSensorInfo: true,
+          },
+        });
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка при записи сетевого номера  датчика',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при записи сетевого номера датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи сетевого номера датчика',
+      };
+    }
+  }
+
   async changeIPForSensor(dto: any) {
     console.log('dto -', dto);
     // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
@@ -423,7 +759,23 @@ export class SensorService {
         where: { id: dto.id },
         data: { ip_address: dto.ip },
       });
-      return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', updatedSensor: updatedSensor };
+      if (updatedSensor) {
+        const allSensors = await this.dbService.new_Sensor.findMany({
+          include: {
+            object: true,
+            additional_sensor_info: true, // Включаем связанную модель организации
+            sensor_operation_log: true, // Включаем связанные сенсоры
+            files: true,
+            requestSensorInfo: true,
+          },
+        });
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка при записи IP address датчика',
+        };
+      }
     } catch (error) {
       console.error('Ошибка при записи IP address датчика:', error);
       return {

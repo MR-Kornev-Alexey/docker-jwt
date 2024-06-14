@@ -20,5 +20,16 @@ export class SensorsDataController {
         }
         return await this.sensorsDataService.getSensorsData(dto);
     }
+
+    @Post('get_sensors_data_one_hour')
+    @HttpCode(200)
+    async getSensorsDataOneHour(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorsDataService.getSensorsDataHour(dto);
+    }
+
 }
 

@@ -7,8 +7,12 @@ export class SseController {
   constructor(private readonly sseService: SseService) {}
 
   @Sse('events')
-  sendEvents(): Observable<{ data: string }> { // Указываем правильный тип возвращаемого значения
+  sendEvents(): Observable<{ data: string }> {
     return this.sseService.sendEvents();
   }
-}
 
+  @Sse('last_value')
+  sendLastValue(): Observable<{ data: string }> {
+    return this.sseService.sendLastValuesStream();
+  }
+}

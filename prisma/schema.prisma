@@ -103,9 +103,7 @@ model additionalSensorInfo {
   factory_number               String
   unit_of_measurement          String?
   installation_location        String?
-  coefficient                  Int?
-  base_value                   Int?
-  last_value                   Int?
+  coefficient                  Float?
   error_information            String?
   additionalSensorInfoNotation String?
 }
@@ -128,11 +126,30 @@ model SensorFile {
 }
 
 model requestSensorInfo {
-  id           Int        @id @default(autoincrement())
-  sensor       new_Sensor @relation(fields: [sensor_id], references: [id])
-  sensor_id    String // Добавляем поле для хранения ID датчика
-  periodicity  Int
-  request_code String?
+  id              Int        @id @default(autoincrement())
+  sensor          new_Sensor @relation(fields: [sensor_id], references: [id])
+  sensor_id       String // Добавляем поле для хранения ID датчика
+  periodicity     Int        @default(10000)
+  request_code    String?
+  counter         Int?       @default(0)
+  alarm_counter   Int?       @default(0)
+  last_base_value Float?     @default(0)
+  base_zero       Float?     @default(0)
+  min_base        Float?     @default(0)
+  max_base        Float?     @default(0)
+  zeroX           Float?     @default(0)
+  minX            Float?     @default(0)
+  maxX            Float?     @default(0)
+  last_valueX     Float?     @default(0)
+  zeroY           Float?     @default(0)
+  minY            Float?     @default(0)
+  maxY            Float?     @default(0)
+  last_valueY     Float?     @default(0)
+  zeroZ           Float?     @default(0)
+  minZ            Float?     @default(0)
+  maxZ            Float?     @default(0)
+  last_valueZ     Float?     @default(0)
+  warning         Boolean    @default(false)
 }
 
 model dataFromSensor {

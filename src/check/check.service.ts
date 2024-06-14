@@ -11,4 +11,11 @@ export class CheckService {
         });
         return checkUser?.role === "admin" || checkUser?.role === "supervisor";
     }
+    async checkAllUserAccess(email: string): Promise<boolean> {
+        const checkUser = await this.dbService.m_User.findFirst({
+            where: { email }
+        });
+        return !!checkUser;
+    }
+
 }

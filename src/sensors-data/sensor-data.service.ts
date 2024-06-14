@@ -54,4 +54,9 @@ export class SensorsDataService {
       return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при получении данных' };
     }
   }
+
+  async getSensorsDataHour(dto: InputData) {
+    console.log(dto)
+
+  }
 }

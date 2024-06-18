@@ -424,36 +424,82 @@ export class SensorService {
     }
   }
 
-  async changeNullForAllCharts(dto: any) {
+  async changeNullForOneObject(dto: any) {
     console.log('dto -', dto);
     try {
-      const allSensorsInfo = await this.dbService.requestSensorInfo.findMany();
-      if(!dto.flag) {
-        for (const sensorInfo of allSensorsInfo) {
-          const { id, base_zero, last_base_value } = sensorInfo;
+      const findObject = await this.dbService.m_Object.findFirst({
+        where: {
+          id: dto.id,
+        },
+        include: {
+          Sensor: {
+            include: {
+              requestSensorInfo: true
+            }
+          }
+        }
+      });
 
-          // Обновляем запись с новыми значениями
-          await this.dbService.requestSensorInfo.update({
-            where: { id },
-            data: {
-              base_zero: last_base_value
+      if(findObject) {
+        const allSensors = findObject.Sensor;
+        // console.log(allSensors)
+        if (findObject?.set_null){
+          for (const sensor of allSensors) {
+            const sensorId = sensor.id;
+            await this.dbService.requestSensorInfo.updateMany({
+              where: {
+                sensor_id: sensorId
+              },
+              data: {
+                base_zero: 0
+              }
+            });
+          }
+          await this.dbService.m_Object.update({
+            where: {
+              id: dto.id,
             },
-          });
+            data: {
+              set_null: false
+            }
+          })
+        } else {
+          for (const sensor of allSensors) {
+            const sensorId = sensor.id;
+            await this.dbService.requestSensorInfo.updateMany({
+              where: {
+                sensor_id: sensorId
+              },
+              data: {
+                base_zero: sensor.requestSensorInfo[0].last_base_value
+              }
+            });
+          }
+          await this.dbService.m_Object.update({
+            where: {
+              id: dto.id,
+            },
+            data: {
+              set_null: true
+            }
+          })
         }
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'Успешное выполнение операции',
+          allSensors:await this.dbService.new_Sensor.findMany({
+            include: {
+              object: true,
+              additional_sensor_info: true, // Включаем связанную модель организации
+              sensor_operation_log: true, // Включаем связанные сенсоры
+              files: true,
+              requestSensorInfo: true,
+            },
+          })
+        };
       } else {
-        for (const sensorInfo of allSensorsInfo) {
-          const { id, base_zero, last_base_value } = sensorInfo;
-          // Обновляем запись с новыми значениями
-          await this.dbService.requestSensorInfo.update({
-            where: { id },
-            data: {
-              last_base_value: base_zero,
-              base_zero: 0,
-            },
-          });
-        }
+        return { statusCode: HttpStatus.BAD_REQUEST, message: "Объект не найден" };
       }
-      return await this.getAllSensorsFromDb()
     } catch (error) {
       console.error('Ошибка при изменении датчика:', error);
       return {

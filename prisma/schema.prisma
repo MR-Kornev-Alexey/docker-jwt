@@ -73,6 +73,8 @@ model m_Object {
   name            String
   address         String
   notation        String
+  set_null        Boolean         @default(false)
+  periodicity     Int             @default(10000)
   Sensor          new_Sensor[]
 }
 

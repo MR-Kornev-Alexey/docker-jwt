@@ -130,14 +130,14 @@ export class SensorController {
     return await this.sensorService.setNullForOneSensor(dto);
   }
 
-  @Post('change_null_for_all_charts')
+  @Post('change_null_for_one_object')
   @HttpCode(200)
-  async changeNullForAllCharts(@Body() dto: any) {
+  async changeNullForOneObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
     if (!checkAccess) { // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
-    return await this.sensorService.changeNullForAllCharts(dto);
+    return await this.sensorService.changeNullForOneObject(dto);
   }
   @Post('change_value_one_sensor_from_api')
   @HttpCode(200)

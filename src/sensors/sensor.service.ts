@@ -6,6 +6,7 @@ import { sensorFormInput } from '../types/sensorFormInput';
 import * as path from 'path';
 import * as fs from 'fs';
 import { GetDataSensorService } from '../socketClient/getDataSensor.service';
+import e from 'express';
 
 interface JSONData {
   [key: string]: {
@@ -14,6 +15,13 @@ interface JSONData {
   };
 }
 
+interface SensorEmissionDto {
+  object_id: string;
+  model: string;
+  limitValue: number;
+  emissionsQuantity: number;
+  errorsQuantity: number;
+}
 
 @Injectable()
 export class SensorService {
@@ -41,6 +49,28 @@ export class SensorService {
     }
   }
 
+  async sendUpdatedDataOneSensor(id) {
+    const oneSensor = await this.dbService.new_Sensor.findFirst({
+      where: {
+        id: id,
+      },
+      include: {
+        object: true,
+        additional_sensor_info: true,
+        sensor_operation_log: true,
+        files: true,
+        requestSensorInfo: true,
+        error_information: true,
+      },
+    });
+    console.log(oneSensor);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Успешное выполнение операции',
+      oneSensor: oneSensor,
+    };
+  }
+
   async setRequestDataForOneSensor(dto: { email: string; requestDataForSensor: any }) {
     console.log('dto -', dto);
     try {
@@ -63,66 +93,86 @@ export class SensorService {
     }
   }
 
-  async setLogDataForSensor(dto: { email: string; jsonData: any }) {
+  async setLogDataForSensor(dto: { email: string; logsData: any }) {
     console.log('dto -', dto);
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (checkAccess) {
-      try {
-        // Создаем новый объект в базе данных
-        const createLogDataForSensor = await this.dbService.sensorOperationLog.create({
-          data: dto.jsonData,
-        });
-        if (createLogDataForSensor) {
-          return {
-            statusCode: HttpStatus.OK,
-            message: 'Успешная запись данных',
-            oneSensor: createLogDataForSensor,
-          };
-        } else {
-          // Если создание объекта не удалось, выбрасываем ошибку
-          throw new Error('Ошибка при записи данных о датчике');
-        }
+    try {
+      const findSensor = await this.dbService.sensorOperationLog.findFirst({
+        where: {
+          sensor_id: dto.logsData.sensor_id,
+        },
+      });
 
-      } catch (error) {
-        // Обрабатываем ошибку при создании объекта
-        return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при записи данных' };
+      let logDataForSensor;
+
+      if (findSensor) {
+        logDataForSensor = await this.dbService.sensorOperationLog.update({
+          where: {
+            id: findSensor.id,
+          },
+          data: dto.logsData,
+        });
+      } else {
+        logDataForSensor = await this.dbService.sensorOperationLog.create({
+          data: dto.logsData,
+        });
       }
-    } else {
-      // Если доступ запрещен, возвращаем соответствующий статус и сообщение
-      return { statusCode: HttpStatus.FORBIDDEN, message: 'Доступ запрещен' };
+      if (logDataForSensor) {
+        return await this.sendUpdatedDataOneSensor(dto.logsData.sensor_id);
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка при записи данных',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при записи данных:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи данных',
+      };
     }
   }
 
   async setAdditionalDataForSensor(dto: { email: string; additionalDataForSensor: any }) {
     console.log('dto -', dto);
-    // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (checkAccess) {
-      try {
-        // Создаем новый объект в базе данных
-        const createAdditionalDataForSensor = await this.dbService.additionalSensorInfo.create({
+    try {
+      const findSensor = await this.dbService.additionalSensorInfo.findFirst({
+        where: {
+          sensor_id: dto.additionalDataForSensor.sensor_id,
+        },
+      });
+
+      let additionalDataForSensor;
+
+      if (findSensor) {
+        additionalDataForSensor = await this.dbService.additionalSensorInfo.update({
+          where: {
+            id: findSensor.id,
+          },
           data: dto.additionalDataForSensor,
         });
-        if (createAdditionalDataForSensor) {
-          return {
-            statusCode: HttpStatus.OK,
-            message: 'Успешная запись данных',
-            oneSensor: createAdditionalDataForSensor,
-          };
-        } else {
-          // Если создание объекта не удалось, выбрасываем ошибку
-          throw new Error('Ошибка при записи данных о датчике');
-        }
-
-      } catch (error) {
-        // Обрабатываем ошибку при создании объекта
-        return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при записи данных' };
+      } else {
+        additionalDataForSensor = await this.dbService.additionalSensorInfo.create({
+          data: dto.additionalDataForSensor,
+        });
       }
-    } else {
-      // Если доступ запрещен, возвращаем соответствующий статус и сообщение
-      return { statusCode: HttpStatus.FORBIDDEN, message: 'Доступ запрещен' };
+      if (additionalDataForSensor) {
+        return await this.sendUpdatedDataOneSensor(dto.additionalDataForSensor.sensor_id);
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка при записи данных',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при записи данных:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи данных',
+      };
     }
   }
+
 
   async initAllNewTypeSensor(dto: { email: string; jsonData: JSONData }) {
     console.log('dto -', dto);
@@ -165,14 +215,15 @@ export class SensorService {
         sensor_operation_log: true, // Включаем связанные сенсоры
         files: true,
         requestSensorInfo: true,
+        error_information: true,
       },
     });
     return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
   }
 
   async getAllTypeSensorsFromDb() {
-    const allSensors = await this.dbService.type_Sensor.findMany();
-    return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
+    const allSensorsType = await this.dbService.type_Sensor.findMany();
+    return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensorsType: allSensorsType };
   }
 
   async createNewSensorToObject(dto: sensorFormInput) {
@@ -246,6 +297,7 @@ export class SensorService {
           sensor_operation_log: true,
           files: true,
           requestSensorInfo: true,
+          error_information: true,
         },
       });
       return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
@@ -295,14 +347,13 @@ export class SensorService {
         },
       });
       if (createFileResult) {
-        return {
-          statusCode: HttpStatus.OK,
-          message: 'Успешное выполнение операции',
-          oneSensor: createFileResult,
-        };
+        return await this.sendUpdatedDataOneSensor(createFileResult.sensor_id);
       } else {
         fs.unlinkSync(filePath);
-        throw new Error('Ошибка при записи данных о датчике');
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при записи файла',
+        };
       }
       // Возвращаем URL для доступа к файлу
       return { fileUrl };
@@ -338,22 +389,10 @@ export class SensorService {
         where: { id: dto.id },
         data: { designation: dto.designation },
       });
-      // Получаем обновленный датчик с вложенными данными
-      const oneSensor = await this.dbService.new_Sensor.findFirst({
-        where: { id: dto.id },
-        include: {
-          object: true,
-          additional_sensor_info: true,
-          sensor_operation_log: true,
-          files: true,
-          requestSensorInfo: true,
-        },
-      });
-
       return {
         statusCode: HttpStatus.OK,
         message: 'Успешное выполнение операции',
-        oneSensor,
+        oneSensor: updatedSensor,
       };
     } catch (error) {
       console.error('Ошибка при изменении датчика:', error);
@@ -424,7 +463,102 @@ export class SensorService {
     }
   }
 
-  async changeNullForOneObject(dto: any) {
+
+  async changeDataForEmissionProcessing(dto: SensorEmissionDto) {
+    console.log('dto -', dto);
+    try {
+      const findSensors = await this.dbService.new_Sensor.findMany({
+        where: {
+          object_id: dto.object_id,
+          model: dto.model,
+        },
+        include: {
+          additional_sensor_info: true, // Include related model organization
+        },
+      });
+
+      console.log(findSensors);
+
+      if (findSensors.length > 0) {
+        for (const sensor of findSensors) {
+          const findSensor = await this.dbService.additionalSensorInfo.findFirst({
+            where: {
+              sensor_id: sensor.id,
+            },
+          });
+
+          if (findSensor) {
+            try {
+              await this.dbService.additionalSensorInfo.updateMany({
+                where: {
+                  sensor_id: sensor.id,
+                },
+                data: {
+                  limitValue: dto.limitValue,
+                  emissionsQuantity: dto.emissionsQuantity,
+                  errorsQuantity: dto.errorsQuantity,
+                },
+              });
+            } catch (updateError) {
+              console.error(`Error updating sensor ${sensor.id}:`, updateError);
+              return {
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: `Error updating sensor ${sensor.id}`,
+              };
+            }
+          } else {
+            try {
+              await this.dbService.additionalSensorInfo.create({
+                data: {
+                  sensor_id: sensor.id,
+                  limitValue: dto.limitValue,
+                  emissionsQuantity: dto.emissionsQuantity,
+                  errorsQuantity: dto.errorsQuantity,
+                },
+              });
+            } catch (createError) {
+              console.error(`Error creating additional info for sensor ${sensor.id}:`, createError);
+              return {
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: `Error creating additional info for sensor ${sensor.id}`,
+              };
+            }
+          }
+        }
+      } else {
+        const errorMessage = `Object with id ${dto.object_id} not found`;
+        console.log(errorMessage);
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: errorMessage,
+        };
+      }
+
+      const allSensors = await this.dbService.new_Sensor.findMany({
+        include: {
+          object: true,
+          additional_sensor_info: true, // Include related model organization
+          sensor_operation_log: true, // Include related sensors
+          files: true,
+          requestSensorInfo: true,
+        },
+      });
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное выполнение операции',
+        allSensors: allSensors,
+      };
+    } catch (error) {
+      console.error('Error while modifying sensor:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: '500 Error while modifying sensor',
+      };
+    }
+  }
+
+  async changeParametersForOneObject(dto: any) {
     console.log('dto -', dto);
     try {
       const findObject = await this.dbService.m_Object.findFirst({
@@ -434,60 +568,75 @@ export class SensorService {
         include: {
           Sensor: {
             include: {
-              requestSensorInfo: true
-            }
-          }
-        }
+              requestSensorInfo: true,
+            },
+          },
+        },
       });
 
-      if(findObject) {
+      if (findObject) {
         const allSensors = findObject.Sensor;
         // console.log(allSensors)
-        if (findObject?.set_null){
-          for (const sensor of allSensors) {
-            const sensorId = sensor.id;
-            await this.dbService.requestSensorInfo.updateMany({
+        if (dto.flag === 'null') {
+          if (findObject?.set_null) {
+            for (const sensor of allSensors) {
+              const sensorId = sensor.id;
+              await this.dbService.requestSensorInfo.updateMany({
+                where: {
+                  sensor_id: sensorId,
+                },
+                data: {
+                  base_zero: 0,
+                },
+              });
+            }
+            await this.dbService.m_Object.update({
               where: {
-                sensor_id: sensorId
+                id: dto.id,
               },
               data: {
-                base_zero: 0
-              }
+                set_null: false,
+              },
+            });
+          } else {
+            for (const sensor of allSensors) {
+              const sensorId = sensor.id;
+              await this.dbService.requestSensorInfo.updateMany({
+                where: {
+                  sensor_id: sensorId,
+                },
+                data: {
+                  base_zero: sensor.requestSensorInfo[0].last_base_value,
+                },
+              });
+            }
+            await this.dbService.m_Object.update({
+              where: {
+                id: dto.id,
+              },
+              data: {
+                set_null: true,
+              },
             });
           }
-          await this.dbService.m_Object.update({
-            where: {
-              id: dto.id,
-            },
-            data: {
-              set_null: false
-            }
-          })
         } else {
           for (const sensor of allSensors) {
             const sensorId = sensor.id;
             await this.dbService.requestSensorInfo.updateMany({
               where: {
-                sensor_id: sensorId
+                sensor_id: sensorId,
               },
               data: {
-                base_zero: sensor.requestSensorInfo[0].last_base_value
-              }
+                periodicity: dto.periodicity,
+              },
             });
           }
-          await this.dbService.m_Object.update({
-            where: {
-              id: dto.id,
-            },
-            data: {
-              set_null: true
-            }
-          })
         }
+
         return {
           statusCode: HttpStatus.OK,
           message: 'Успешное выполнение операции',
-          allSensors:await this.dbService.new_Sensor.findMany({
+          allSensors: await this.dbService.new_Sensor.findMany({
             include: {
               object: true,
               additional_sensor_info: true, // Включаем связанную модель организации
@@ -495,10 +644,10 @@ export class SensorService {
               files: true,
               requestSensorInfo: true,
             },
-          })
+          }),
         };
       } else {
-        return { statusCode: HttpStatus.BAD_REQUEST, message: "Объект не найден" };
+        return { statusCode: HttpStatus.BAD_REQUEST, message: 'Объект не найден' };
       }
     } catch (error) {
       console.error('Ошибка при изменении датчика:', error);
@@ -570,7 +719,6 @@ export class SensorService {
           message: `Датчик с идентификатором ${dto.id} не найден`,
         };
       }
-      // Обновляем значение поля run на противоположное
       const updatedSensor = await this.dbService.new_Sensor.update({
         where: {
           id: dto.id,
@@ -580,19 +728,7 @@ export class SensorService {
         },
       });
       if (updatedSensor) {
-        const oneSensor = await this.dbService.new_Sensor.findFirst({
-          where: {
-            id: dto.id,
-          },
-          include: {
-            object: true,
-            additional_sensor_info: true,
-            sensor_operation_log: true,
-            files: true,
-            requestSensorInfo: true,
-          },
-        });
-        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: updatedSensor };
       } else {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -689,58 +825,48 @@ export class SensorService {
   async deleteOneSensorFromApi(dto: any) {
     console.log('dto -', dto);
     try {
-      // Проверяем наличие связанных записей в таблице additional_sensor_info
-      const relatedAdditionalSensorInfo = await this.dbService.additionalSensorInfo.findMany({
-        where: { sensor_id: dto.id },
-      });
+      // Массивы с именами связанных таблиц и их полями для удаления
+      const relatedTables = [
+        { table: 'additionalSensorInfo', field: 'sensor_id' },
+        { table: 'sensorOperationLog', field: 'sensor_id' },
+        { table: 'sensorFile', field: 'sensor_id' },
+        { table: 'requestSensorInfo', field: 'sensor_id' },
+        { table: 'dataFromSensor', field: 'sensor_id' }, // Добавляем таблицу dataFromSensor
+      ];
 
-      // Удаляем связанные записи из таблицы additional_sensor_info
-      if (relatedAdditionalSensorInfo.length > 0) {
-        await this.dbService.additionalSensorInfo.deleteMany({
-          where: { sensor_id: dto.id },
-        });
-      }
-      const relatedSensorOperationLogs = await this.dbService.sensorOperationLog.findMany({
-        where: { sensor_id: dto.id },
-      });
+      // Цикл для удаления связанных записей из каждой таблицы, если они существуют
+      for (const { table, field } of relatedTables) {
+        if (dto.id) { // Проверяем наличие id в DTO
+          const relatedRecords = await this.dbService[table].findMany({
+            where: { [field]: dto.id },
+          });
 
-      // Удаляем связанные записи из таблицы sensor_operation_log
-      if (relatedSensorOperationLogs.length > 0) {
-        await this.dbService.sensorOperationLog.deleteMany({
-          where: { sensor_id: dto.id },
-        });
+          if (relatedRecords.length > 0) {
+            await this.dbService[table].deleteMany({
+              where: { [field]: dto.id },
+            });
+          }
+        }
       }
-      const relatedSensorFiles = await this.dbService.sensorFile.findMany({
-        where: { sensor_id: dto.id },
-      });
 
-      // Удаляем связанные записи из таблицы SensorFile
-      if (relatedSensorFiles.length > 0) {
-        await this.dbService.sensorFile.deleteMany({
-          where: { sensor_id: dto.id },
+      // Удаление датчика по его ID, если id существует в DTO
+      if (dto.id) {
+        await this.dbService.new_Sensor.delete({
+          where: { id: dto.id },
         });
       }
-      const requestDataSensor = await this.dbService.requestSensorInfo.findMany({
-        where: { sensor_id: dto.id },
-      });
-      if (requestDataSensor.length > 0) {
-        await this.dbService.requestSensorInfo.deleteMany({
-          where: { sensor_id: dto.id },
-        });
-      }
-      // Удаляем датчик по его ID
-      await this.dbService.new_Sensor.delete({
-        where: { id: dto.id },
-      });
+
+      // Получение всех оставшихся датчиков
       const allSensors = await this.dbService.new_Sensor.findMany({
         include: {
           object: true,
-          additional_sensor_info: true, // Включаем связанную модель организации
-          sensor_operation_log: true, // Включаем связанные сенсоры
+          additional_sensor_info: true,
+          sensor_operation_log: true,
           files: true,
           requestSensorInfo: true,
         },
       });
+
       return { statusCode: HttpStatus.OK, message: 'Датчик успешно удален из базы данных', allSensors: allSensors };
     } catch (error) {
       console.error('Ошибка при удалении датчика:', error);
@@ -750,7 +876,6 @@ export class SensorService {
       };
     }
   }
-
 
   async importNewSensorsToObject(dto: any) {
     console.log('dto -', dto);
@@ -772,16 +897,7 @@ export class SensorService {
         data: { network_number: Number(dto.network_number) },
       });
       if (updatedSensor) {
-        const allSensors = await this.dbService.new_Sensor.findMany({
-          include: {
-            object: true,
-            additional_sensor_info: true, // Включаем связанную модель организации
-            sensor_operation_log: true, // Включаем связанные сенсоры
-            files: true,
-            requestSensorInfo: true,
-          },
-        });
-        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: updatedSensor };
       } else {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -806,16 +922,7 @@ export class SensorService {
         data: { ip_address: dto.ip },
       });
       if (updatedSensor) {
-        const allSensors = await this.dbService.new_Sensor.findMany({
-          include: {
-            object: true,
-            additional_sensor_info: true, // Включаем связанную модель организации
-            sensor_operation_log: true, // Включаем связанные сенсоры
-            files: true,
-            requestSensorInfo: true,
-          },
-        });
-        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensors: allSensors };
+        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: updatedSensor };
       } else {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

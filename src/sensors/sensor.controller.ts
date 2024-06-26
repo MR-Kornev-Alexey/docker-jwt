@@ -63,12 +63,20 @@ export class SensorController {
   @Post('set_additional_data_for_sensor')
   @HttpCode(200)
   async setAdditionalDataForSensor(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
     return await this.sensorService.setAdditionalDataForSensor(dto);
   }
 
   @Post('set_log_data_for_sensor')
   @HttpCode(200)
   async setLogDataForSensor(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
     return await this.sensorService.setLogDataForSensor(dto);
   }
 
@@ -130,15 +138,27 @@ export class SensorController {
     return await this.sensorService.setNullForOneSensor(dto);
   }
 
-  @Post('change_null_for_one_object')
+  @Post('change_parameters_for_one_object')
   @HttpCode(200)
-  async changeNullForOneObject(@Body() dto: any) {
+  async changeParametersForOneObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
     if (!checkAccess) { // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
-    return await this.sensorService.changeNullForOneObject(dto);
+    return await this.sensorService.changeParametersForOneObject(dto);
   }
+
+  @Post('change_data_for_emission_processing')
+  @HttpCode(200)
+  async changeDataForEmissionProcessing(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
+    return await this.sensorService.changeDataForEmissionProcessing(dto);
+  }
+
+
   @Post('change_value_one_sensor_from_api')
   @HttpCode(200)
   async changeValueOneSensor(@Body() dto: any) {

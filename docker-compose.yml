@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   migrations:
     command: npx prisma migrate deploy
@@ -12,7 +14,6 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
-  # название сервиса
   nest-api:
     build:
       context: .
@@ -30,24 +31,19 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
   postgres:
-    # образ
     image: postgres
-    # политика перезапуска
     restart: on-failure
-    # файл с переменными среды окружения
     env_file:
       - .env
-    # порты
     ports:
       - 5433:5432
-    # тома для постоянного хранения данных
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: common_db
     user: postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready", "-d", "common_db", "-U", "postgres"]
+      test: ["CMD-SHELL", "pg_isready -d common_db -U postgres"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -58,6 +54,7 @@ services:
     image: nginx:latest
     ports:
       - '80:80'
+      - '5050:5050'
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./static:/var/www/static
@@ -70,7 +67,7 @@ services:
       - '8080:80'
     environment:
       PGADMIN_DEFAULT_EMAIL: alex@mrk.digital
-      PGADMIN_DEFAULT_PASSWORD:   qwertyuiop
+      PGADMIN_DEFAULT_PASSWORD: qwertyuiop
     restart: always
 
 volumes:

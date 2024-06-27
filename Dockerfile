@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
+# Copy .env file to the working directory
+COPY .env .env
+
 # Copy Prisma schema
 COPY prisma ./prisma/
 

@@ -13,8 +13,8 @@ COPY .env .env
 # Copy Prisma schema
 COPY prisma ./prisma/
 
-# Install dependencies with increased memory limit
-RUN NODE_OPTIONS="--max-old-space-size=4096" npm install
+# Install dependencies
+RUN npm install
 
 # Generate Prisma client
 RUN npx prisma generate

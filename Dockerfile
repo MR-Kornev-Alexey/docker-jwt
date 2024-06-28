@@ -15,13 +15,11 @@ COPY prisma ./prisma/
 
 # Set the memory limit to 4GB (adjust as needed)
 ENV NODE_OPTIONS=--max-old-space-size=1024
-ENV npm_config_maxsockets=5
 
 # Install dependencies
-RUN npm install --no-audit --prefer-offline --legacy-peer-deps
+RUN npm install
 
-# Install dependencies
-RUN npm install --no-audit --prefer-offline
+RUN apt-get update -y && apt-get install -y openssl
 
 # Generate Prisma client
 RUN npx prisma generate

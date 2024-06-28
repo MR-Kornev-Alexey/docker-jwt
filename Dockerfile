@@ -13,6 +13,9 @@ COPY .env .env
 # Copy Prisma schema
 COPY prisma ./prisma/
 
+# Set the memory limit to 2GB
+ENV NODE_OPTIONS=--max-old-space-size=2048
+
 # Install dependencies
 RUN npm install
 

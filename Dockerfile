@@ -1,6 +1,6 @@
 
 # Build stage
-FROM node:21 AS builder
+FROM node:22 as builder
 
 WORKDIR /app
 
@@ -13,8 +13,8 @@ COPY .env .env
 # Copy Prisma schema
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm install
+# Install dependencies with increased memory limit
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm install
 
 # Generate Prisma client
 RUN npx prisma generate

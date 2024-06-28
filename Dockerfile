@@ -1,5 +1,7 @@
 FROM node:21 AS builder
 
+# Install openssl
+RUN apk update && apk add --no-cache openssl
 
 WORKDIR /app
 

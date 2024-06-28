@@ -14,7 +14,7 @@ COPY .env .env
 COPY prisma ./prisma/
 
 # Set the memory limit to 4GB (adjust as needed)
-ENV NODE_OPTIONS=--max-old-space-size=512
+ENV NODE_OPTIONS=--max-old-space-size=1024
 ENV npm_config_maxsockets=5
 
 # Install dependencies

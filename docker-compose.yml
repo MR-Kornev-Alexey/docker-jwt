@@ -13,6 +13,7 @@ services:
         condition: service_healthy
     environment:
       NODE_OPTIONS: --max-old-space-size=2048
+      npm_config_maxsockets: 5
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
   nest-api:

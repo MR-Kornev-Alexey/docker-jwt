@@ -1,6 +1,6 @@
 
-# Build stage
-FROM node:22 as builder
+# First stage: build stage
+FROM node:22-slim as builder
 
 WORKDIR /app
 
@@ -14,7 +14,9 @@ COPY .env .env
 COPY prisma ./prisma/
 
 # Set the memory limit to 2GB
+# Set the memory limit to 2GB and limit npm concurrency
 ENV NODE_OPTIONS=--max-old-space-size=2048
+ENV npm_config_maxsockets=5
 
 # Install dependencies
 RUN npm install --no-audit --prefer-offline
@@ -35,7 +37,8 @@ RUN npm run build
 RUN ls -la dist
 
 # Final stage
-FROM node:21
+# Second stage: production stage
+FROM node:22-slim
 
 WORKDIR /app
 

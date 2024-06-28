@@ -1,38 +1,57 @@
 # First stage: build stage
-FROM node:21 as builder
+FROM node:22-slim as builder
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Copy .env file to the working directory
-COPY .env ./
+COPY .env .env
 
-# Copy Prisma schema directory
+# Copy Prisma schema
 COPY prisma ./prisma/
 
-# Set the memory limit for Node.js (adjust as needed)
+# Set the memory limit to 4GB (adjust as needed)
 ENV NODE_OPTIONS=--max-old-space-size=1024
 
-# Clean npm cache and install dependencies
-RUN npm cache clean --force && npm install
+RUN npm cache clean --force
+# Install dependencies
+RUN npm install
 
-# Install OpenSSL (required for Prisma)
 RUN apt-get update -y && apt-get install -y openssl
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Debugging: Check if Prisma client was generated
+# Debug: Check if Prisma client was generated
 RUN ls -la node_modules/.prisma/client
 
-# Copy the entire application source code
+# Copy application source code
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Debugging: Check if build was successful
+# Debug: Check if build was successful
 RUN ls -la dist
+
+# Second stage: production stage
+FROM node:22-slim
+
+WORKDIR /app
+
+# Copy files from the builder stage
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/package*.json /app/
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/prisma /app/prisma
+
+# Debug: Verify that Prisma client is included in the final image
+RUN ls -la node_modules/.prisma/client
+
+# Expose port
+EXPOSE 5000
+
+# Start the application
+CMD [ "npm", "run", "start:prod" ]

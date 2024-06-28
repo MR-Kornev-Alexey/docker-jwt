@@ -13,10 +13,12 @@ COPY .env .env
 # Copy Prisma schema
 COPY prisma ./prisma/
 
-# Set the memory limit to 2GB
-# Set the memory limit to 2GB and limit npm concurrency
-ENV NODE_OPTIONS=--max-old-space-size=2048
+# Set the memory limit to 4GB (adjust as needed)
+ENV NODE_OPTIONS=--max-old-space-size=4096
 ENV npm_config_maxsockets=5
+
+# Install dependencies
+RUN npm install --no-audit --prefer-offline --legacy-peer-deps
 
 # Install dependencies
 RUN npm install --no-audit --prefer-offline

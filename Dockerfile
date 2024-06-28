@@ -17,7 +17,7 @@ COPY prisma ./prisma/
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
 # Install dependencies
-RUN npm install
+RUN npm install --no-audit --prefer-offline
 
 # Generate Prisma client
 RUN npx prisma generate

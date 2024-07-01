@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM node:22 AS builder
+FROM node:21 AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN npm install typescript
 RUN npx nest build
 
 # Stage 2: Production stage
-FROM node:22
+FROM node:21
 
 WORKDIR /app/
 

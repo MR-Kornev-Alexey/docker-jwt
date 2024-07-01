@@ -11,12 +11,13 @@ COPY prisma ./prisma/
 RUN npm install -g @nestjs/cli
 
 # Install project dependencies
+COPY package*.json ./
 RUN npm install
 
-COPY . .
+# Explicitly install typescript as well
+RUN npm install typescript
 
-# Ensure the nest CLI is executable
-RUN chmod +x ./node_modules/.bin/nest
+COPY . .
 
 # Build the project using the local nest CLI
 RUN npx nest build

@@ -14,9 +14,11 @@ RUN npm install -g @nestjs/cli
 RUN npm install
 
 # Explicitly install typescript
-RUN npm install typescript
+
 
 COPY . .
+
+RUN npm install typescript
 
 # Build the project using the local nest CLI
 RUN npx nest build

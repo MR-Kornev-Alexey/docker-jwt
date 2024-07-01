@@ -28,7 +28,6 @@ RUN mkdir -p /app
 
 # Устанавливаем рабочую директорию /app
 WORKDIR /app
-
 # Копируем зависимости и собранные файлы из предыдущего этапа
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/package*.json /app/

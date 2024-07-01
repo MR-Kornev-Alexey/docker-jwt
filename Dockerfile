@@ -9,6 +9,8 @@ COPY prisma ./prisma/
 RUN npm install
 RUN npm install
 RUN npm install -g @nestjs/cli
+RUN npm install --save-dev @types/supertest
+
 
 COPY . .
 

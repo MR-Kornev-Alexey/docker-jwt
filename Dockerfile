@@ -15,8 +15,11 @@ RUN npm install
 
 COPY . .
 
-# Build the project using the global nest CLI
-RUN nest build
+# Ensure the nest CLI is executable
+RUN chmod +x ./node_modules/.bin/nest
+
+# Build the project using the local nest CLI
+RUN ./node_modules/.bin/nest build
 
 # Stage 2: Production stage
 FROM node:22

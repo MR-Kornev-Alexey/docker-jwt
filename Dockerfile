@@ -1,38 +1,42 @@
-# Stage 1: Build stage
-FROM node:21 AS builder
+# Используем node:22 как базовый образ
+FROM node:22 AS builder
 
+# Устанавливаем рабочую директорию /app
 WORKDIR /app
 
+# Копируем .env файл
 COPY .env ./
+
+# Копируем package.json и package-lock.json для установки зависимостей
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install global dependencies first
-RUN npm install -g @nestjs/cli
+# Устанавливаем зависимости
+RUN npm install --only=prod
 
-# Install project dependencies
-RUN npm install --max-old-space-size=2096
-
-# Explicitly install typescript
-
+# Копируем все файлы проекта
 COPY . .
 
-RUN npm install typescript
+# Собираем проект с помощью Nest CLI
+RUN npm run build
 
-# Build the project using the local nest CLI
-RUN npx nest build
+# Второй этап Dockerfile
+FROM node:22
 
-# Stage 2: Production stage
-FROM node:21
+# Создаем директорию /app в контейнере
+RUN mkdir -p /app
 
-WORKDIR /app/
+# Устанавливаем рабочую директорию /app
+WORKDIR /app
 
+# Копируем зависимости и собранные файлы из предыдущего этапа
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/package*.json /app/
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/prisma /app/prisma
 
-# Expose the application port
+# Ваша подсказка
 EXPOSE 8000
 
+# Команда для запуска приложения в продакшн режиме
 CMD [ "npm", "run", "start:prod" ]

@@ -1,7 +1,5 @@
-FROM node:21 AS builder
+FROM node:22 AS builder
 
-# Install openssl
-RUN apk update && apk add --no-cache openssl
 
 WORKDIR /app
 
@@ -20,7 +18,7 @@ COPY . .
 RUN npm run build
 
 
-FROM node:21
+FROM node:22
 
 
 RUN mkdir -p /app/

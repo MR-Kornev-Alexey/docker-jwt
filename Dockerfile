@@ -11,10 +11,9 @@ COPY prisma ./prisma/
 RUN npm install -g @nestjs/cli
 
 # Install project dependencies
-COPY package*.json ./
 RUN npm install
 
-# Explicitly install typescript as well
+# Explicitly install typescript
 RUN npm install typescript
 
 COPY . .

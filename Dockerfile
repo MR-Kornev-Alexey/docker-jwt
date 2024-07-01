@@ -5,8 +5,8 @@ WORKDIR /app
 COPY .env ./
 COPY package*.json ./
 COPY prisma ./prisma/
-
-RUN npm install
+# Установка Prisma CLI глобально
+RUN npm install -g prisma
 RUN npm install
 RUN npm install -g @nestjs/cli
 RUN npm install --save-dev @types/supertest
@@ -18,7 +18,7 @@ RUN npm install -g typescript
 
 RUN npx prisma generate
 
-RUN npm run build  # Или npx nest build, в зависимости от настройки
+RUN npm run build
 
 FROM node:21
 

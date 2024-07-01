@@ -11,10 +11,9 @@ COPY prisma ./prisma/
 RUN npm install -g @nestjs/cli
 
 # Install project dependencies
-RUN npm install --max-old-space-size=1024
+RUN npm install --max-old-space-size=2096
 
 # Explicitly install typescript
-
 
 COPY . .
 

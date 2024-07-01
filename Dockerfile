@@ -1,5 +1,5 @@
 # Используем node:22 как базовый образ
-FROM node:22 AS builder
+FROM node:21 AS builder
 
 # Устанавливаем рабочую директорию /app
 WORKDIR /app
@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build
 
 # Второй этап Dockerfile
-FROM node:22
+FROM node:21
 
 # Создаем директорию /app в контейнере
 RUN mkdir -p /app

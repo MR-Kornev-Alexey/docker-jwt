@@ -1,4 +1,4 @@
-FROM node:21 AS builder
+FROM node:22 AS builder
 
 WORKDIR /app
 
@@ -7,15 +7,15 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 RUN npm install
+RUN npm install --only=dev
 RUN npm install -g @nestjs/cli
 
 COPY . .
 
 RUN npm install typescript
+RUN npm run build  # Или npx nest build, в зависимости от настройки
 
-RUN nest build
-
-FROM node:21
+FROM node:22
 
 RUN mkdir -p /app/
 WORKDIR /app/

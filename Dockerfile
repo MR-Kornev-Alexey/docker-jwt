@@ -1,4 +1,4 @@
-FROM node:22 AS builder
+FROM node:21 AS builder
 
 WORKDIR /app
 
@@ -12,10 +12,11 @@ RUN npm install -g @nestjs/cli
 
 COPY . .
 
-RUN npm install typescript
+RUN npm install -g typescript
+
 RUN npm run build  # Или npx nest build, в зависимости от настройки
 
-FROM node:22
+FROM node:21
 
 RUN mkdir -p /app/
 WORKDIR /app/

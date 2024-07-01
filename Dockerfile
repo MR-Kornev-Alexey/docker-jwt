@@ -19,7 +19,7 @@ COPY . .
 RUN chmod +x ./node_modules/.bin/nest
 
 # Build the project using the local nest CLI
-RUN ./node_modules/.bin/nest build
+RUN npx nest build
 
 # Stage 2: Production stage
 FROM node:22

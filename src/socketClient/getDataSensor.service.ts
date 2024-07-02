@@ -6,13 +6,21 @@ import { CalculateService } from '../calculate/calculate.service';
 
 @Injectable()
 export class GetDataSensorService {
+  private isProcessing = false;
+
   constructor(
     private readonly socketClientService: SocketClientService,
-    private dbService: PrismaService,
+    private readonly dbService: PrismaService,
     private readonly sseService: SseService,
-    private readonly calculateService: CalculateService
-) {}
-  async startSchedule(){
+    private readonly calculateService: CalculateService,
+  ) {}
+
+  async sendAndScheduleRequest(callback: () => void) {
+    const parseIpAddress = (sensor) => {
+      const [ip, port] = sensor.ip_address.split(':');
+      return { ip, port };
+    };
+
     const responseDataOfSensors = await this.dbService.new_Sensor.findMany({
       where: {
         run: true, // Параметр для фильтрации
@@ -21,59 +29,40 @@ export class GetDataSensorService {
         requestSensorInfo: true,
       },
     });
-    await this.sendAndScheduleRequest();
-    setInterval(() => {
-      this.sendAndScheduleRequest();
-    }, responseDataOfSensors.length*12000);
-  }
-  async sendAndScheduleRequest() {
-    const responseDataOfSensors = await this.dbService.new_Sensor.findMany({
-      where: {
-        run: true, // Filtering condition
-      },
-      include: {
-        requestSensorInfo: true,
-      },
-    });
-
-    // Debugging output to verify the structure of the data
-    // console.log(responseDataOfSensors);
 
     if (responseDataOfSensors.length !== 0) {
-      const parseIpAddress = (sensor) => {
-        const [ip, port] = sensor.ip_address.split(':');
-        return { ip, port };
-      };
-
-      for (let i = 0; i < responseDataOfSensors.length; i++) {
+      let i = 0;
+      do {
         const sensor = responseDataOfSensors[i];
-        if (sensor.ip_address && sensor.requestSensorInfo.length > 0) {
-          const { ip, port } = parseIpAddress(sensor);
-          const code = sensor.requestSensorInfo[0].request_code;
-          const delay = sensor.requestSensorInfo[0].periodicity;
+        const { ip, port } = parseIpAddress(sensor);
+        const code = sensor.requestSensorInfo[0].request_code;
+        const delay = sensor.requestSensorInfo[0].periodicity;
 
-          setTimeout(async () => {
-            try {
-              const responseData = await this.socketClientService.sendRequest(ip, port, code);
-              const allResponseData = {
-                sensor_id: sensor.id.toString(), // Ensure sensor_id is a string
-                request_code: code.toString(), // Ensure request_code is a string
-                answer_code: responseData.toString('hex'), // Assuming answer_code is a Buffer
-                created_at: new Date(), // Add the current date and time
-              };
+        try {
+          const responseData = await this.socketClientService.sendRequest(ip, port, code);
+          const allResponseData = {
+            sensor_id: sensor.id.toString(),
+            request_code: code.toString(),
+            answer_code: responseData.toString('hex'),
+            created_at: new Date(),
+          };
 
-              await this.dbService.dataFromSensor.create({ data: allResponseData });
-              await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
-              await this.sseService.send(allResponseData);
-            } catch (error) {
-              console.log(error);
-            }
-          }, delay * i);
-        } else {
-          console.log(`Skipping sensor with id ${sensor.id} due to missing ip_address or requestSensorInfo`);
+          await this.dbService.dataFromSensor.create({ data: allResponseData });
+          await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
+          await this.sseService.send(allResponseData);
+        } catch (error) {
+          console.error(`Error processing sensor ${sensor.id}:`, error);
         }
-      }
+
+        await new Promise(resolve => setTimeout(resolve, delay)); // 10 seconds delay
+        i++;
+      } while (i < responseDataOfSensors.length);
+
+      // Вызываем callback после завершения цикла
+      callback();
+    } else {
+      // Если нет данных для обработки, сразу вызываем callback
+      callback();
     }
   }
-
 }

@@ -11,6 +11,7 @@ sendRequest(ip: string, port: number, code: string): Promise<Buffer> {
       const client = new net.Socket();
 
       client.connect(port, ip, () => {
+        console.log( new Date());
         console.log('Connected to server:', request);
         client.write(request);
       });

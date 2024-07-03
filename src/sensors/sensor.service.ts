@@ -22,6 +22,29 @@ interface SensorEmissionDto {
   emissionsQuantity: number;
   errorsQuantity: number;
 }
+interface Sensor {
+  requestSensorInfo: {
+    id: number;
+    sensor_id: string;
+    periodicity: number;
+    request_code: string;
+    logical_zero: any;
+    add_zero: any;
+    min: number | null;
+    max: number | null;
+    base_value: any;
+    last_value: any;
+    warning: boolean;
+    base_zero: number;
+  }[];
+  name: string;
+  id: string;
+  sensor_id: string;
+  designation: string;
+  network_number: number;
+  model: string;
+  data: string[];
+}
 
 @Injectable()
 export class SensorService {
@@ -226,16 +249,52 @@ export class SensorService {
     return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensorsType: allSensorsType };
   }
 
+
+  async setOneSensorDuplicate(dto: sensorFormInput) {
+    console.log('dto -- createNewSensorToObject', dto);
+    try {
+      const sensor = await this.dbService.new_Sensor.findUnique({
+        where: {
+          id: dto.id
+        },
+      });
+
+      if (sensor) {
+        const { id, ...rest } = sensor; // Деструктуризация для исключения id из sensor
+        const data = {
+          ...rest,
+          network_number: dto.network_number
+        };
+        console.log(data);
+        const createSensor = await this.dbService.new_Sensor.create({
+          data: data as any
+        });
+
+        if (!createSensor) {
+          return {
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Ошибка 500 при записи данных о датчике',
+          };
+        }
+        return await this.getAllSensorsFromDb();
+      } else {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при записи данных о датчике',
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при дублировании датчика:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи данных о датчике',
+      };
+    }
+  }
+
   async createNewSensorToObject(dto: sensorFormInput) {
     console.log('dto -- createNewSensorToObject', dto);
-
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) {
-      return { statusCode: HttpStatus.FORBIDDEN, message: 'Доступ запрещен' };
-    }
-
     const requestDataToDB = dto.requestData;
-
     try {
       // Создаем новый объект в базе данных
       const createSensor = await this.dbService.new_Sensor.create({

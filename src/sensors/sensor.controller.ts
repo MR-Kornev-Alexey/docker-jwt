@@ -22,9 +22,24 @@ export class SensorController {
 
   @Post('set_new_sensor_to_object')
   @HttpCode(200)
-  async setNewSensorToObject(@Body() dto: sensorFormInput) {
+  async setNewSensorToObject(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
     return await this.sensorService.createNewSensorToObject(dto);
   }
+
+  @Post('one_sensor_duplication')
+  @HttpCode(200)
+  async setOneSensorDuplicate(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
+    return await this.sensorService.setOneSensorDuplicate(dto);
+  }
+
 
   @Post('get_all_sensors')
   @HttpCode(200)
@@ -43,6 +58,8 @@ export class SensorController {
   async getAllDataAboutOneSensor(@Body() dto: { email: string, id: string }) {
     return await this.sensorService.getAllDataAboutOneSensor(dto);
   }
+
+
 
   @Post('set_request_data_for_sensor')
   @HttpCode(200)

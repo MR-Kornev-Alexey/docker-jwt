@@ -22,6 +22,7 @@ async function startSocketClientService() {
           await socketClientService.sendAndScheduleRequest(callbackFunction);
         } catch (error) {
           logger.error('Error in sendAndScheduleRequest inside setTimeout:', error);
+          console.log('Error in sendAndScheduleRequest inside setTimeout:', error);
         }
       }, 5000); // Call the function again in 5 seconds
     } catch (error) {

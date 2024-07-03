@@ -251,82 +251,61 @@ export class SensorService {
 
 
   async setOneSensorDuplicate(dto: sensorFormInput) {
-    console.log('dto -- createNewSensorToObject', dto);
+    console.log('dto -- setOneSensorDuplicate', dto);
     try {
       const sensor = await this.dbService.new_Sensor.findUnique({
-        where: {
-          id: dto.id
-        },
+        where: { id: dto.id },
       });
 
-      if (sensor) {
-        const { id, ...rest } = sensor; // Деструктуризация для исключения id из sensor
-        const data = {
-          ...rest,
-          network_number: dto.network_number
-        };
-        console.log(data);
-        const createSensor = await this.dbService.new_Sensor.create({
-          data: data as any
-        });
-
-        if (!createSensor) {
-          return {
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Ошибка 500 при записи данных о датчике',
-          };
-        }
-        return await this.getAllSensorsFromDb();
-      } else {
-        return {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Ошибка 500 при записи данных о датчике',
-        };
+      if (!sensor) {
+        throw new Error('Sensor not found');
       }
+      const { id, ...rest } = sensor; // Destructuring to exclude id
+      const data = { ...rest, network_number: dto.network_number };
+
+      return await this.createSensorRecord(data, dto.requestData);
     } catch (error) {
-      console.error('Ошибка при дублировании датчика:', error);
+      console.error('Error duplicating sensor:', error);
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Ошибка 500 при записи данных о датчике',
+        message: `Error duplicating sensor: ${error.message}`,
       };
     }
   }
 
   async createNewSensorToObject(dto: sensorFormInput) {
     console.log('dto -- createNewSensorToObject', dto);
-    const requestDataToDB = dto.requestData;
     try {
-      // Создаем новый объект в базе данных
-      const createSensor = await this.dbService.new_Sensor.create({
-        data: dto.sensorsData,
-      });
-
-      if (!createSensor) {
-        throw new Error('Ошибка при записи данных о датчике');
-      }
-
-      console.log('createSensor -- ', createSensor);
-
-      requestDataToDB.sensor_id = createSensor.id;
-      console.log('requestDataToDB -- ', requestDataToDB);
-
-      const createDataRequest = await this.dbService.requestSensorInfo.create({
-        data: requestDataToDB,
-      });
-
-      if (!createDataRequest) {
-        throw new Error('Ошибка при записи данных запроса о датчике');
-      }
-
-      return await this.getAllSensorsFromDb();
+      return await this.createSensorRecord(dto.sensorsData, dto.requestData);
     } catch (error) {
-      console.error('Ошибка при создании объекта:', error);
+      console.error('Error creating sensor object:', error);
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Ошибка 500 при записи данных о датчике',
+        message: `Error creating sensor object: ${error.message}`,
       };
     }
   }
+
+  private async createSensorRecord(sensorData: any, requestData: any) {
+    try {
+      const createSensor = await this.dbService.new_Sensor.create({ data: sensorData });
+      if (!createSensor) {
+        throw new Error('Error creating sensor record');
+      }
+      requestData.sensor_id = createSensor.id;
+      const createDataRequest = await this.dbService.requestSensorInfo.create({
+        data: requestData,
+      });
+      if (!createDataRequest) {
+        throw new Error('Error creating request data record');
+      }
+      return await this.getAllSensorsFromDb();
+    } catch (error) {
+      console.error('Error in createSensorRecord:', error);
+      throw error;
+    }
+  }
+
 
   async getAllSensors(dto: { email: string }) {
     console.log('dto -', dto);

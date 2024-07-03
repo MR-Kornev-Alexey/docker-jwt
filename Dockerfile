@@ -8,15 +8,8 @@ COPY prisma ./prisma/
 # Установка Prisma CLI глобально
 RUN npm install -g prisma
 RUN npm install
-RUN npm install -g @nestjs/cli
-RUN npm install --save-dev @types/supertest
-RUN npm install winston
-RUN npm install nest-winston
-
 
 COPY . .
-
-RUN npm install -g typescript
 
 RUN npx prisma generate
 

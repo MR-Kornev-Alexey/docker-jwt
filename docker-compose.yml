@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: nest-api-migrations
-    restart: on-failure:3
+    restart: on-failure
     depends_on:
       postgres:
         condition: service_healthy

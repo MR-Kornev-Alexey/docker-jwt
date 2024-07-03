@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Buffer } from 'node:buffer';
 import * as net from 'net';
 
 @Injectable()
@@ -18,8 +19,12 @@ sendRequest(ip: string, port: number, code: string): Promise<Buffer> {
 
       client.on('data', (data: Buffer) => {
         console.log('Received response from server:', data);
+        //TODO провалидировать, что приходит
+        // всегда делать копию буфера, который пришёл
+        const copyOfData = Buffer.allocUnsafe(100);
+        data.copy(copyOfData);
         client.end();
-        resolve(data);
+        resolve(copyOfData);
       });
       // Обработка закрытия соединения
       client.on('close', () => {

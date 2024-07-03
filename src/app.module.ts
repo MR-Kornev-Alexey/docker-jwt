@@ -19,11 +19,12 @@ import { SseModule } from './sse/sse.module';
 import { SensorsDataController } from './sensors-data/sensor-data.controller';
 import { SensorsDataService } from './sensors-data/sensor-data.service';
 import { CalculateModule } from './calculate/calculate.module';
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
   controllers: [AppController, CustomersController, OrganizationController, ObjectController, SensorController, SensorsDataController],
   providers: [AppService, CustomersService, OrganizationService, ObjectService, CheckService, SensorService, SocketClientService, GetDataSensorService, SensorsDataService],
-  imports: [AuthModule, PrismaModule, SocketClientModule, SseModule, CalculateModule],
+  imports: [AuthModule, PrismaModule, SocketClientModule, SseModule, CalculateModule,  LoggerModule],
   exports: [CheckService]
 })
 export class AppModule {}

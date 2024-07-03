@@ -10,6 +10,9 @@ async function startSocketClientService() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER); // Получаем провайдер логгера
 
+  //TODO теперь используется WINSTON для внутреннего логгирования в Nest
+  app.useLogger(logger);
+
   const socketClientService = app.get(GetDataSensorService);
 
   // Define callbackFunction
@@ -35,13 +38,15 @@ async function startSocketClientService() {
     logger.log('info', 'Starting socket client service for the first time');
     await socketClientService.sendAndScheduleRequest(callbackFunction);
   } catch (error) {
-    logger.error('Error in initial sendAndScheduleRequest:', error);
+    logger.error('Error in initial sendAndScheduleRequest: ' + error);
   }
 }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER); // Получаем провайдер логгера
+  //TODO теперь используется WINSTON для внутреннего логгирования в Nest
+  app.useLogger(logger);
 
   const config = new DocumentBuilder()
     .setTitle('Open API Nest JWT')

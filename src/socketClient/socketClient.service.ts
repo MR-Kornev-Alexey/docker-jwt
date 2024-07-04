@@ -21,10 +21,12 @@ sendRequest(ip: string, port: number, code: string): Promise<Buffer> {
         console.log('Received response from server:', data);
         //TODO провалидировать, что приходит
         // всегда делать копию буфера, который пришёл
-        const copyOfData = Buffer.allocUnsafe(100);
+        const copyOfData = Buffer.allocUnsafe(14);
         data.copy(copyOfData);
         client.end();
         resolve(copyOfData);
+        // client.end();
+        // resolve(data);
       });
       // Обработка закрытия соединения
       client.on('close', () => {

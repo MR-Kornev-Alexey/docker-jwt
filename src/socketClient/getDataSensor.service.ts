@@ -20,6 +20,17 @@ export class GetDataSensorService {
       const [ip, port] = sensor.ip_address.split(':');
       return { ip, port };
     };
+    const calculateLength = (requestCode, inputCode) => {
+      console.log('requestCode.length ---', requestCode.length)
+      switch (requestCode.length) {
+        case 5:
+          return inputCode.substring(0, 28); // длина 14
+        case 17:
+          return inputCode.substring(0, 24); // длина 10
+        default:
+          return inputCode;
+      }
+    }
 
     const responseDataOfSensors = await this.dbService.new_Sensor.findMany({
       where: {
@@ -30,6 +41,7 @@ export class GetDataSensorService {
       },
     });
 
+
     if (responseDataOfSensors.length !== 0) {
       let i = 0;
       do {
@@ -37,13 +49,12 @@ export class GetDataSensorService {
         const { ip, port } = parseIpAddress(sensor);
         const code = sensor.requestSensorInfo[0].request_code;
         const delay = sensor.requestSensorInfo[0].periodicity;
-
         try {
           const responseData = await this.socketClientService.sendRequest(ip, port, code);
           const allResponseData = {
             sensor_id: sensor.id.toString(),
             request_code: code.toString(),
-            answer_code: responseData.toString('hex'),
+            answer_code: calculateLength(code.toString(),responseData.toString('hex')),
             created_at: new Date(),
           };
 

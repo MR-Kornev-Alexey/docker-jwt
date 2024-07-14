@@ -1,7 +1,7 @@
 
 const { Telegraf, Scenes, session, Markup } = require('telegraf');
 
-const token = '7493939483:AAEJu5dzMz2dxccZcvTU1rAaMi4A-du9b7Y';
+const token = '7493939483:AAGWJGDmU0hSYlg2jYyUKXUqTPGMge62wgM';
 const bot = new Telegraf(token);
 const SceneTerminal = require('./scenes/scene-terminal');
 const SceneSetEmail = require('./scenes/scene-email');

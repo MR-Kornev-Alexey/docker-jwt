@@ -30,6 +30,21 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
+  tg-bot:
+    command: node /app/telegamBot/telegram-bot-server.js
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tg-bot
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
+
   postgres:
     image: postgres
     restart: on-failure

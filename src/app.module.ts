@@ -18,8 +18,10 @@ import { SocketClientModule } from './socketClient/socketClient.module';
 import { SseModule } from './sse/sse.module';
 import { SensorsDataController } from './sensors-data/sensor-data.controller';
 import { SensorsDataService } from './sensors-data/sensor-data.service';
+import { NotificationsController } from './notifications/notifications.controller';
+import { NotificationsService } from './notifications/notifications.service';
 import { CalculateModule } from './calculate/calculate.module';
-import { LoggerModule } from '../logger/logger.module'; // Предполагается, что путь к модулю логгирования указан правильно
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
   controllers: [
@@ -29,6 +31,7 @@ import { LoggerModule } from '../logger/logger.module'; // Предполага�
     ObjectController,
     SensorController,
     SensorsDataController,
+    NotificationsController
   ],
   providers: [
     AppService,
@@ -40,6 +43,7 @@ import { LoggerModule } from '../logger/logger.module'; // Предполага�
     SocketClientService,
     GetDataSensorService,
     SensorsDataService,
+    NotificationsService
   ],
   imports: [
     AuthModule,
@@ -49,7 +53,7 @@ import { LoggerModule } from '../logger/logger.module'; // Предполага�
     CalculateModule,
     LoggerModule,
   ],
-  exports: [CheckService], // Если вы экспортируете CheckService, убедитесь, что это необходимо для других модулей
+  exports: [CheckService]
 })
 export class AppModule {}
 

@@ -11,3 +11,4 @@ export interface ObjectFormInput {
     sensors: string;
     // sensors: SensorFormInput[]; // Предполагается, что у вас есть типизация для SensorFormInput
 }
+

@@ -21,6 +21,6 @@ function calculateChecksum(protocolId, packetId, address) {
 }
 
 
-console.log(formatSensorString(26)); // Должно вывести: "9b 01 0a <checksum>"
+console.log(formatSensorString(41)); // Должно вывести: "9b 01 0a <checksum>"
 console.log(formatSensorString(255)); // Должно вывести: "9b 01 ff <checksum>"
 console.log(formatSensorString(0)); // Должно вывести: "9b 01 01 <checksum>"

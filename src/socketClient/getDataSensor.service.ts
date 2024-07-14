@@ -59,7 +59,7 @@ export class GetDataSensorService {
           };
 
           await this.dbService.dataFromSensor.create({ data: allResponseData });
-          await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
+          // await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
           await this.sseService.send(allResponseData);
         } catch (error) {
           console.error(`Error processing sensor ${sensor.id}:`, error);

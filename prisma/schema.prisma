@@ -14,7 +14,6 @@ datasource db {
 }
 
 // Модель данных для журнала посещения приложения
-// Модель данных для журнала посещения приложения
 model appVisit {
   id      String   @id @default(uuid())
   date    DateTime @default(now()) @db.Timestamp(0)
@@ -27,6 +26,7 @@ model m_User {
   id                  String                 @id @default(uuid())
   name                String
   email               String                 @unique
+  telegramId          Int?
   password            String
   role                Role
   organization        m_Organisation         @relation(fields: [organization_id], references: [id])
@@ -64,8 +64,8 @@ model m_Organisation {
 
 // Определение модели объектов
 model m_Object {
-  id              String          @id @default(uuid()) // UUID в качестве уникального идентификатора
-  organization    m_Organisation  @relation(fields: [organization_id], references: [id])
+  id              String            @id @default(uuid()) // UUID в качестве уникального идентификатора
+  organization    m_Organisation    @relation(fields: [organization_id], references: [id])
   organization_id String // Ссылка на организацию
   objectsType     ObjectsType
   objectsMaterial ObjectsMaterial
@@ -73,12 +73,12 @@ model m_Object {
   name            String
   address         String
   notation        String
-  set_null        Boolean         @default(false)
-  periodicity     Int             @default(10000)
+  set_null        Boolean           @default(false)
+  periodicity     Int               @default(10000)
   Sensor          new_Sensor[]
+  m_notifications m_notifications[]
 }
 
-// Определение модели датчиков
 model new_Sensor {
   id                     String                 @id @default(uuid()) // UUID в качестве уникального идентификатора
   object                 m_Object               @relation(fields: [object_id], references: [id])
@@ -164,6 +164,14 @@ model dataFromSensor {
   request_code String
   answer_code  String
   created_at   DateTime   @default(now()) @db.Timestamp(0)
+}
+
+model m_notifications {
+  id          Int      @id @default(autoincrement())
+  object      m_Object @relation(fields: [object_id], references: [id])
+  object_id   String // Ссылка на объект
+  information String
+  created_at  DateTime @default(now()) @db.Timestamp(0)
 }
 
 model type_Sensor {

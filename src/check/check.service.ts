@@ -17,5 +17,11 @@ export class CheckService {
         });
         return !!checkUser;
     }
+    async checkUserSuperVisor (email: string): Promise<boolean> {
+        const checkUser = await this.dbService.m_User.findFirst({
+            where: { email }
+        });
+        return checkUser?.role === "supervisor";
+    }
 
 }

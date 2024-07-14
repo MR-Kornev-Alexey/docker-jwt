@@ -20,16 +20,23 @@ export class SensorsDataController {
         }
         return await this.sensorsDataService.getSensorsData(dto);
     }
-
-    @Post('get_sensors_data_one_hour')
+    @Post('get_selected_sensors_last_data')
     @HttpCode(200)
-    async getSensorsDataOneHour(@Body() dto: any) {
-        const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
+    async getSelectedSensorsLastData(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
         if (!checkAccess) { // Проверяем, является ли пользователь администратором
             throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
         }
-        return await this.sensorsDataService.getSensorsDataHour(dto);
+        return await this.sensorsDataService.getSelectedSensorsLastData(dto);
     }
-
+    @Post('get_one_sensors_last_data')
+    @HttpCode(200)
+    async getOneSensorsLastData(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorsDataService.getOneSensorsLastData(dto);
+    }
 }
 

@@ -44,7 +44,6 @@ async function bootstrap() {
   try {
     await app.listen(5000, () => {
       logger.log('info: '+ 'Server running on http://localhost:5000');
-      console.log('info ' + 'Server running on http://localhost:5000');
     });
 
     // Start socket client service
@@ -52,15 +51,13 @@ async function bootstrap() {
     const callbackFunction = () => {
       try {
         logger.log('info: ' + 'Waiting for the next schedule...');
-        console.log('Waiting for the next schedule...');
         setTimeout(async () => {
           try {
             await socketClientService.sendAndScheduleRequest(callbackFunction);
           } catch (error) {
             logger.error('Error in sendAndScheduleRequest inside setTimeout: ' + error);
-            console.log('Error in sendAndScheduleRequest inside setTimeout: ' + error);
           }
-        }, 5000); // Call the function again in 5 seconds
+        }, 10000); // Call the function again in 5 seconds
       } catch (error) {
         logger.error('Error in callbackFunction:', error);
       }

@@ -21,6 +21,9 @@ interface SensorEmissionDto {
   limitValue: number;
   emissionsQuantity: number;
   errorsQuantity: number;
+  missedConsecutive: number;
+  maxQuantity: number,
+  minQuantity: number
 }
 interface Sensor {
   requestSensorInfo: {
@@ -535,6 +538,9 @@ export class SensorService {
                   limitValue: dto.limitValue,
                   emissionsQuantity: dto.emissionsQuantity,
                   errorsQuantity: dto.errorsQuantity,
+                  missedConsecutive: dto.missedConsecutive,
+                  maxQuantity: dto.maxQuantity,
+                  minQuantity: dto.minQuantity
                 },
               });
             } catch (updateError) {
@@ -552,6 +558,9 @@ export class SensorService {
                   limitValue: dto.limitValue,
                   emissionsQuantity: dto.emissionsQuantity,
                   errorsQuantity: dto.errorsQuantity,
+                  missedConsecutive: dto.missedConsecutive,
+                  maxQuantity: dto.maxQuantity,
+                  minQuantity: dto.minQuantity
                 },
               });
             } catch (createError) {
@@ -579,9 +588,9 @@ export class SensorService {
           sensor_operation_log: true, // Include related sensors
           files: true,
           requestSensorInfo: true,
+          error_information: true
         },
       });
-
       return {
         statusCode: HttpStatus.OK,
         message: 'Успешное выполнение операции',
@@ -681,6 +690,7 @@ export class SensorService {
               sensor_operation_log: true, // Включаем связанные сенсоры
               files: true,
               requestSensorInfo: true,
+              error_information: true
             },
           }),
         };

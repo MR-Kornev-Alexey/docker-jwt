@@ -38,5 +38,16 @@ export class SensorsDataController {
         }
         return await this.sensorsDataService.getOneSensorsLastData(dto);
     }
+
+    @Post('get_for_line_one_sensors_last_data')
+    @HttpCode(200)
+    async getForLineOneSensorsLastData(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorsDataService.getForLineOneSensorsLastData(dto);
+    }
+
 }
 

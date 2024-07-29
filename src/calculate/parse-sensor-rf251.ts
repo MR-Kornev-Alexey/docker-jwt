@@ -1,6 +1,6 @@
 import hexStringToBuffer from "./hex-string-to-buffer";
 
-export default function parseSensorRf251(hexString: string) {
+export default function parseSensorRf251(hexString: string, coefficient:number) {
   const buffer = hexStringToBuffer(hexString);
 
   if (buffer.length !== 14) {
@@ -52,13 +52,11 @@ export default function parseSensorRf251(hexString: string) {
     return {
       distance: null,
       temperature: null,
-      address: null
     };
   } else {
     return {
-      distance: distanceValue,
-      temperature: temperatureValue,
-      address: address
+      distance: distanceValue*coefficient,
+      temperature: temperatureValue*coefficient,
     };
   }
 }

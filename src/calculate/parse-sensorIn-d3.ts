@@ -1,7 +1,7 @@
 import hexStringToBuffer from "./hex-string-to-buffer";
 
 
-export default function parseSensorInD3(hexDataString: string) {
+export default function parseSensorInD3(hexDataString: string, coefficient: number) {
   const buffer = hexStringToBuffer(hexDataString);
 
   // Проверяем, что размер буфера соответствует ожидаемому размеру ответа
@@ -42,12 +42,14 @@ export default function parseSensorInD3(hexDataString: string) {
   const angleYInteger = ((D2 & 0x3F) << 8) + D1;
   const angleYSign = (D2 >> 7) & 0x01;
   let angleY = (angleYInteger + angleYFractional) * (angleYSign === 0 ? 1 : -1);
+  angleY=angleY*coefficient
   angleY = parseFloat(angleY.toFixed(2));
 
   const angleXFractional = D3 / 256;
   const angleXInteger = ((D5 & 0x3F) << 8) + D4;
   const angleXSign = (D5 >> 7) & 0x01;
   let angleX = (angleXInteger + angleXFractional) * (angleXSign === 0 ? 1 : -1);
+  angleX=angleX*coefficient
   angleX = parseFloat(angleX.toFixed(2));
 
   // Возвращение результатов обработки данных

@@ -22,7 +22,10 @@ import { NotificationsController } from './notifications/notifications.controlle
 import { NotificationsService } from './notifications/notifications.service';
 import { CalculateModule } from './calculate/calculate.module';
 import { LoggerModule } from '../logger/logger.module';
-
+import { SensorUtilsService } from './utils/sensor-utils.service';
+import { NotifyController } from './notify/notify-controller';
+import { NotifyService } from './notify/notify.service';
+import { TelegramModule } from './telegram/telegram.module';
 @Module({
   controllers: [
     AppController,
@@ -31,7 +34,8 @@ import { LoggerModule } from '../logger/logger.module';
     ObjectController,
     SensorController,
     SensorsDataController,
-    NotificationsController
+    NotificationsController,
+    NotifyController
   ],
   providers: [
     AppService,
@@ -43,7 +47,9 @@ import { LoggerModule } from '../logger/logger.module';
     SocketClientService,
     GetDataSensorService,
     SensorsDataService,
-    NotificationsService
+    NotificationsService,
+    SensorUtilsService,
+    NotifyService
   ],
   imports: [
     AuthModule,
@@ -52,8 +58,9 @@ import { LoggerModule } from '../logger/logger.module';
     SseModule,
     CalculateModule,
     LoggerModule,
+    TelegramModule
   ],
-  exports: [CheckService]
+  exports: [CheckService, SensorUtilsService]
 })
 export class AppModule {}
 

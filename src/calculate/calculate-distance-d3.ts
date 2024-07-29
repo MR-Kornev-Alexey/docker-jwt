@@ -1,6 +1,6 @@
 export const calculateDistance = (x: number, y: number): number | null => {
   // Проверка на undefined
-  if (x === undefined || y === undefined) {
+  if (x === undefined || y === undefined || x === null || y === null ) {
     return null;
   }
 

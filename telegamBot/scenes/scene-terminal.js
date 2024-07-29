@@ -1,5 +1,6 @@
 const { Scenes: { BaseScene }, Markup } = require('telegraf');
 const { getObjectsByTelegramId } = require('../bd-client/get-objects-by-telegramId');
+const { newStartInterval } = require('../bd-client/send-data-to-terminal');
 
 class SceneTerminal {
   terminalScene() {
@@ -27,6 +28,7 @@ class SceneTerminal {
       const chatId = ctx.update.callback_query?.from?.id;
       const messageId = ctx.update.callback_query.message.message_id;
       await ctx.telegram.deleteMessage(chatId, messageId);
+      await newStartInterval()
       await ctx.scene.enter('next', { selectedObjectId });
       await ctx.scene.leave();
     });

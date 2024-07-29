@@ -8,41 +8,51 @@ async function getTerminalRequest(sensorId) {
         sensor_id: sensorId,
       },
       orderBy: {
-        created_at: 'desc', // Сортировка по полю created_at в убывающем порядке
+        created_at: 'desc', // Sort by created_at in descending order
       },
     });
   } catch (error) {
-    console.error('Произошла ошибка:', error.message);
+    console.error('Error occurred:', error.message);
     return { error: error.message };
   }
 }
 
+let shouldStop = false; // Control variable to manage stopping
 
-let intervalId = null; // Переменная для хранения идентификатора интервала
+async function stopInterval() {
+  console.log("stopInterval...")
+  shouldStop = true; // Set the flag to true to stop the interval
+}
 
-async function startInterval(sensorsArray, delay, callback) {
+async function newStartInterval() {
+  console.log("newStartInterval...")
+  shouldStop = false; // Set the flag to true to stop the interval
+}
+async function startInterval(sensorsArray, delay, callback, completionCallback, stopCallback) {
   try {
-    intervalId = setInterval(async () => {
-      for (let i = 0; i < sensorsArray.length; i++) {
-        const sensorId = sensorsArray[i];
-        const response = await getTerminalRequest(sensorId);
+    for (const sensorId of sensorsArray) {
+      await new Promise(resolve => setTimeout(resolve, delay)); // Wait for the specified delay
+      const response = await getTerminalRequest(sensorId); // Fetch data for the sensor
+      if (shouldStop) {
+        stopCallback()
+      } else {
         if (callback) {
-          callback(response);
+          callback(response); // Invoke the callback with the response
         }
       }
-    }, delay);
+    }
+    if (shouldStop) {
+      stopCallback()
+    } else {
+      if (completionCallback) {
+        completionCallback(); // Call the completion callback if provided
+      }
+    }
   } catch (error) {
     console.error('Error during interval processing:', error);
-    // Перебросить ошибку для обработки снаружи, если нужно
-    throw error;
+    throw error; // Rethrow the error for external handling if needed
   }
 }
 
-function stopInterval() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-  }
-}
 
-module.exports = { startInterval, stopInterval };
+module.exports = { startInterval, stopInterval, newStartInterval};

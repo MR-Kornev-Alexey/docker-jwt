@@ -3,6 +3,14 @@ import { SocketClientService } from './socketClient.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SseService } from '../sse/sse.service';
 import { CalculateService } from '../calculate/calculate.service';
+import { SensorUtilsService } from '../utils/sensor-utils.service';
+
+interface AllResponseData {
+  sensor_id: string,
+  request_code: string,
+  answer_code: string,
+  created_at: Date,
+}
 
 @Injectable()
 export class GetDataSensorService {
@@ -13,15 +21,19 @@ export class GetDataSensorService {
     private readonly dbService: PrismaService,
     private readonly sseService: SseService,
     private readonly calculateService: CalculateService,
+    private readonly sensorUtilsService: SensorUtilsService,
   ) {}
+
+
 
   async sendAndScheduleRequest(callback: () => void) {
     const parseIpAddress = (sensor) => {
       const [ip, port] = sensor.ip_address.split(':');
-      return { ip, port };
+      return { ip, port: Number(port) }; // Convert port to a number
     };
-    const calculateLength = (requestCode, inputCode) => {
-      console.log('requestCode.length ---', requestCode.length)
+
+    const calculateLength = (requestCode: string, inputCode: string) => {
+      console.log('requestCode.length ---', requestCode.length);
       switch (requestCode.length) {
         case 5:
           return inputCode.substring(0, 28); // длина 14
@@ -30,7 +42,7 @@ export class GetDataSensorService {
         default:
           return inputCode;
       }
-    }
+    };
 
     const responseDataOfSensors = await this.dbService.new_Sensor.findMany({
       where: {
@@ -41,7 +53,6 @@ export class GetDataSensorService {
       },
     });
 
-
     if (responseDataOfSensors.length !== 0) {
       let i = 0;
       do {
@@ -49,23 +60,26 @@ export class GetDataSensorService {
         const { ip, port } = parseIpAddress(sensor);
         const code = sensor.requestSensorInfo[0].request_code;
         const delay = sensor.requestSensorInfo[0].periodicity;
+        const sensorId = sensor.id
         try {
-          const responseData = await this.socketClientService.sendRequest(ip, port, code);
-          const allResponseData = {
-            sensor_id: sensor.id.toString(),
-            request_code: code.toString(),
-            answer_code: calculateLength(code.toString(),responseData.toString('hex')),
-            created_at: new Date(),
-          };
+          const responseData = await this.sendRequestWithTimeout(ip, port, code, sensorId, 60000); // Тайм-аут 90 секунд
 
-          await this.dbService.dataFromSensor.create({ data: allResponseData });
-          // await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
-          await this.sseService.send(allResponseData);
+          if (responseData) {
+            const allResponseData: AllResponseData = {
+              sensor_id: sensor.id.toString(),
+              request_code: code.toString(),
+              answer_code: calculateLength(code.toString(), responseData.toString('hex')),
+              created_at: new Date(),
+            };
+            await this.dbService.dataFromSensor.create({ data: allResponseData });
+            await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
+            await this.sseService.send(allResponseData);
+          }
         } catch (error) {
           console.error(`Error processing sensor ${sensor.id}:`, error);
+          await this.sensorUtilsService.sendMessageAboutSensorAndObject(sensorId, error.message)
         }
-
-        await new Promise(resolve => setTimeout(resolve, delay)); // 10 seconds delay
+        await new Promise(resolve => setTimeout(resolve, delay)); // Задержка перед следующим запросом
         i++;
       } while (i < responseDataOfSensors.length);
 
@@ -74,6 +88,22 @@ export class GetDataSensorService {
     } else {
       // Если нет данных для обработки, сразу вызываем callback
       callback();
+    }
+  }
+
+  private async sendRequestWithTimeout(ip: string, port: number, code: string, sensorId: string, timeout: number): Promise<Buffer | null> {
+    try {
+      const response = await Promise.race([
+        this.socketClientService.sendRequest(ip, port, code),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Истекло время ожидания ответа датчика или сбой запроса')), timeout)
+        ),
+      ]);
+      return response as Buffer;
+    } catch (error) {
+      console.error('Истекло время ожидания ответа или сбой запроса:', error);
+      await this.sensorUtilsService.sendMessageAboutSensorAndObject(sensorId, error.message)
+      return null;
     }
   }
 }

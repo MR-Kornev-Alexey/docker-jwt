@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   migrations:
     command: npx prisma migrate deploy
@@ -36,8 +37,6 @@ services:
       dockerfile: Dockerfile
     container_name: tg-bot
     restart: always
-    ports:
-      - 3001:3001 # Ensure tg-bot listens on port 3001
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,9 +67,6 @@ services:
   nginx:
     container_name: proxy_nginx
     image: nginx:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
     ports:
       - '80:80'
     volumes:

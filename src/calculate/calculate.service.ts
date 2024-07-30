@@ -145,7 +145,7 @@ export class CalculateService {
       },
     });
     if (newValue >= foundLimitValues.emissionsQuantity) {
-      const message = `Всплесков подряд больше ${foundLimitValues.emissionsQuantity}`
+      const message = `Выбросов подряд больше ${foundLimitValues.emissionsQuantity}`
       await this.createNewLogInDB(prevDataSensor.sensor_id, message)
       await this.dbService.requestSensorInfo.update({
         where: {

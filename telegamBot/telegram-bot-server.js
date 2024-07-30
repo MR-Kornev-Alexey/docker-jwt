@@ -16,6 +16,7 @@ const SceneSetEmail = require('./scenes/scene-email');
 const NextScene = require('./scenes/next-scene');
 const NoteScene = require('./scenes/note-scene');
 const { stopInterval, resetInterval, newStartInterval } = require('./bd-client/send-data-to-terminal');
+const { setNotesStatus, resetNotesStatus } = require('./bd-client/chahge-notes-status');
 
 const setTelegramID = new SceneSetEmail().EmailScene();
 const terminalScene = new SceneTerminal().terminalScene();
@@ -49,6 +50,37 @@ bot.command('terminal', async (ctx) => {
 bot.command('notifications', async (ctx) => {
   await ctx.scene.enter('note');
 });
+bot.command('start_alarm', async (ctx) => {
+  ctx.reply(
+    'Включить оповещение об ошибках и сбоях?',
+    Markup.inlineKeyboard([
+      Markup.button.callback('Включить', 'start_alarm_yes'),
+    ])
+  );
+});
+
+bot.command('stop_alarm', async (ctx) => {
+  ctx.reply(
+    'Выключить оповещение об ошибках и сбоях?',
+    Markup.inlineKeyboard([
+      Markup.button.callback('Выключить', 'stop_alarm_yes'),
+    ])
+  );
+});
+
+bot.action('start_alarm_yes', async (ctx) => {
+  const chatId = ctx?.update?.callback_query?.from.id
+  ctx.answerCbQuery()
+  await setNotesStatus(chatId)
+  ctx.reply('Оповещения включены');
+});
+
+bot.action('stop_alarm_yes', async (ctx) => {
+  const chatId = ctx?.update?.callback_query?.from.id
+  ctx.answerCbQuery()
+  await resetNotesStatus(chatId)
+  ctx.reply('Оповещения выключены');
+});
 
 bot.command('stop', async (ctx) => {
   await stopInterval();
@@ -70,7 +102,7 @@ bot.on('text', async (ctx) => {
 // Define the /message endpoint in Express
 app.post('/message', async (req, res) => {
   const { chatId, message } = req.body;
-  console.log('req.body === ', req.body);
+  // console.log('req.body === ', req.body);
   try {
     await bot.telegram.sendMessage(chatId, message);
     res.status(200).json({ status: 'success', message: 'Message sent' });

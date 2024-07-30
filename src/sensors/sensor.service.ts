@@ -299,7 +299,17 @@ export class SensorService {
       const createDataRequest = await this.dbService.requestSensorInfo.create({
         data: requestData,
       });
+      const addInfoSensor = {
+        sensor_id: createSensor.id,
+        coefficient: 1
+      }
+      const createDataAdd = await this.dbService.additionalSensorInfo.create({
+        data: addInfoSensor,
+      });
       if (!createDataRequest) {
+        throw new Error('Error creating request data record');
+      }
+      if (!createDataAdd) {
         throw new Error('Error creating request data record');
       }
       return await this.getAllSensorsFromDb();

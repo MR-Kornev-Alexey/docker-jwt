@@ -68,6 +68,9 @@ services:
   nginx:
     container_name: proxy_nginx
     image: nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - '80:80'
     volumes:

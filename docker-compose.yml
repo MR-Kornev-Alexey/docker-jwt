@@ -21,7 +21,7 @@ services:
     container_name: nest-api
     restart: always
     ports:
-      - 8000:5000
+      - 8000:5000  # Проброс порта для доступа к API
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,7 +71,16 @@ services:
       - '80:80'
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ./static:/var/www/static
+      - ./frontend:/usr/share/nginx/html  # Монтируем папку с фронтендом
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - '3000:80'  # Доступ фронтенда на порту 3000
     restart: always
 
   pgadmin:

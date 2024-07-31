@@ -1,6 +1,0 @@
-FROM nginx:latest
-
-COPY ./nginx /etc/nginx/conf.d
-COPY ./static /var/www/static
-
-# Любая дополнительная кастомизация, если требуется

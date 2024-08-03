@@ -24,6 +24,7 @@ async function bootstrap() {
   const cors = {
     origin: [
       'http://localhost:3000',
+      'http://localhost:3001',
       'http://localhost:5000',
       'http://89.108.76.29',
       'http://localhost',

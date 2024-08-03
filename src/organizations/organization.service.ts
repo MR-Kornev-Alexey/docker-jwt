@@ -24,7 +24,8 @@ export class OrganizationService {
                 return {
                     statusCode: HttpStatus.OK,
                     message: 'Данная организация уже внесена в базу',
-                    allOrganizations: await this.dbService.m_Organisation.findMany()
+                    allOrganizations: await this.dbService.m_Organisation.findMany(),
+                    organization: checkOrganization
                 };
             } else {
                 const createdOrganization = await this.dbService.m_Organisation.create({
@@ -84,13 +85,17 @@ export class OrganizationService {
 
     async checkOrganization(dto) {
         console.log("dto -", dto)
-        const checkOrganization = await this.findOrganizationByInn(dto.inn);
-        console.log("checkOrganization -", checkOrganization)
-        if (checkOrganization) {
-            return {statusCode: HttpStatus.OK, organization: checkOrganization};
-        } else {
-            return {statusCode: HttpStatus.NOT_FOUND, organization: 'OrganizationNotFound'};
+        try{
+            const checkOrganization = await this.findOrganizationByInn(dto.inn);
+            if (checkOrganization) {
+                return {statusCode: HttpStatus.OK, organization: checkOrganization, message: "Основная организация загружена"};
+            } else {
+                return {statusCode: HttpStatus.OK, organization: '', message: "Основная организация не загружена" };
+            }
+        } catch (error) {
+            return {statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: `Ошибка при записи данных: ${error}`};
         }
+
     }
 
     async getAllOrganizationsApi() {

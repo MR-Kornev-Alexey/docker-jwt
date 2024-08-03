@@ -1,6 +1,5 @@
 version: '3.8'
 
-
 services:
   migrations:
     command: npx prisma migrate deploy
@@ -15,7 +14,6 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
-
   nest-api:
     build:
       context: .
@@ -23,7 +21,7 @@ services:
     container_name: nest-api
     restart: always
     ports:
-      - 8000:5000  # Проброс порта для доступа к API
+      - 8000:5000  # API should listen on port 5000 in the container
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,23 +71,23 @@ services:
       - '80:80'
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ./frontend:/usr/share/nginx/html  # Монтируем папку с фронтендом
+    command: [nginx-debug, '-g', 'daemon off;']
     restart: always
 
   frontend:
     build:
-      context: ./frontend
+      context: ../migs-frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - '3000:80'  # Доступ фронтенда на порту 3000
+      - '3002:3000'  # Port for frontend application
     restart: always
 
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
     ports:
-      - '8080:80'
+      - '3003:80'
     environment:
       PGADMIN_DEFAULT_EMAIL: alex@mrk.digital
       PGADMIN_DEFAULT_PASSWORD: qwertyuiop

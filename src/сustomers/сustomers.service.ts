@@ -63,63 +63,77 @@ export class CustomersService {
         return checkSV ? {statusCode: HttpStatus.OK} : {statusCode: HttpStatus.NOT_FOUND};
     }
 
-    async deleteOneCustomer(dto: any) {
+    async deleteOneCustomer(dto) {
         console.log(dto);
-
+        const { idCustomer } = dto;  // Destructuring for better readability
         try {
-            let findAddData = await this.dbService.m_AdditionalUserInfo.findFirst({
-                where: { user_id: dto.idUser },
+            const findCustomer = await this.dbService.m_User.findFirst({
+                where: { id: idCustomer },
             });
+            console.log(findCustomer);
 
-            if (findAddData) {
-                await this.dbService.m_AdditionalUserInfo.deleteMany({
-                    where: { user_id: dto.idUser },
+            const findAddDataCustomer = await this.dbService.m_AdditionalUserInfo.findFirst({
+                where: { user_id: idCustomer },
+            });
+            console.log(findAddDataCustomer);
+
+            if (findCustomer === null) {
+                console.log('No records found to delete.');
+                return { statusCode: HttpStatus.BAD_REQUEST, message: "Пользователь не найден" };
+            }
+            if (findAddDataCustomer !== null) {
+                await this.dbService.m_AdditionalUserInfo.delete({
+                    where: { user_id: idCustomer },
                 });
+                console.log('Deleted additional customer data.');
             }
 
-            let deleteOne = await this.dbService.m_User.deleteMany({
-                where: { id: dto.idUser },
+            await this.dbService.m_User.delete({
+                where: { id: idCustomer },
             });
-
-            if (deleteOne) {
-                const checkCustomers = await this.dbService.m_User.findMany({
-                    include: {
-                        organization: true ,
-                        additionalUserInfo: true
-                    }
-                });
-                return { statusCode: HttpStatus.OK, message: "Пользователь удален", allUsers: checkCustomers };
-            } else {
-                return { statusCode: HttpStatus.BAD_REQUEST, message: "Ошибка удаления пользователя" };
-            }
+            console.log('Deleted record from m_User table.');
+            const allUsers = await this.getAllCustomers();
+            return { statusCode: HttpStatus.OK, message: "Пользователь удален", allUsers };
         } catch (error) {
             console.error("Произошла ошибка при удалении пользователя:", error);
-            return { statusCode: HttpStatus.BAD_REQUEST, message: "Ошибка удаления пользователя" };
+            return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: "Ошибка удаления пользователя" };
         }
     }
 
-
-    async createNewCustomer(dto: any) {
-        console.log(dto)
-        const findId = await this.dbService.m_User.findUnique({
-            where: {email: dto.email}
-        });
-
-        if (findId) {
-            return {statusCode: HttpStatus.BAD_REQUEST, message: "Пользователь с таким Email уже создан"};
-        }
-        const newUserCreate = await this.dbService.m_User.create({data: dto});
-        if (newUserCreate) {
-            const checkCustomers = await this.dbService.m_User.findMany({
-                include: {
-                    organization: true // Или другие поля, которые вам нужны из организации
-                }
+    async createNewCustomer(dto) {
+        console.log(dto);
+        const { email } = dto;  // Destructuring for better readability
+        try {
+            const existingUser = await this.dbService.m_User.findUnique({
+                where: { email },
             });
-            return {statusCode: HttpStatus.OK, message: "Пользователь создан", allUsers: checkCustomers};
-        } else {
-            return {statusCode: HttpStatus.BAD_REQUEST, message: "Error of create User"};
+
+            if (existingUser) {
+                return { statusCode: HttpStatus.BAD_REQUEST, message: "Пользователь с таким Email уже создан" };
+            }
+
+            const newUser = await this.dbService.m_User.create({ data: dto });
+            if (newUser) {
+                const allUsers = await this.getAllCustomers();
+                return { statusCode: HttpStatus.OK, message: "Пользователь создан", allUsers };
+            }
+
+            return { statusCode: HttpStatus.BAD_REQUEST, message: "Ошибка создания пользователя" };
+        } catch (error) {
+            console.error("Произошла ошибка при создании пользователя:", error);
+            return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: "Ошибка создания пользователя" };
         }
     }
+
+    async getAllCustomers() {
+        // Fetch all users with necessary fields
+        return this.dbService.m_User.findMany({
+            include: {
+                organization: true, // Include related fields as needed
+            },
+        });
+    }
+
     async getDataAboutOneCustomer(dto: any) {
         console.log(dto)
         const findCustomer = await this.dbService.m_User.findFirst(

@@ -22,7 +22,7 @@ export class OrganizationService {
             const checkOrganization = await this.findOrganizationByInn(dto.inn);
             if (checkOrganization) {
                 return {
-                    statusCode: HttpStatus.OK,
+                    statusCode: HttpStatus.BAD_REQUEST,
                     message: 'Данная организация уже внесена в базу',
                     allOrganizations: await this.dbService.m_Organisation.findMany(),
                     organization: checkOrganization
@@ -55,7 +55,7 @@ export class OrganizationService {
                 const checkOrganization = await this.findOrganizationByInn(dto.organizationsData.inn);
                 if (checkOrganization) {
                     return {
-                        statusCode: HttpStatus.OK,
+                        statusCode: HttpStatus.BAD_REQUEST,
                         message: 'Данная организация уже внесена в базу',
                         allOrganizations: await this.dbService.m_Organisation.findMany()
                     };

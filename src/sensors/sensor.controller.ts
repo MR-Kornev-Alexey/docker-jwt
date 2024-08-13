@@ -77,6 +77,17 @@ export class SensorController {
     return await this.sensorService.initAllNewTypeSensor(dto);
   }
 
+
+
+  @Post('set_additional_parameter_for_sensor')
+  @HttpCode(200)
+  async setAdditionalParameterForSensor(@Body() dto: any) {
+    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+    }
+    return await this.sensorService.setAdditionalParameterForSensor(dto);
+  }
   @Post('set_additional_data_for_sensor')
   @HttpCode(200)
   async setAdditionalDataForSensor(@Body() dto: any) {
@@ -176,25 +187,25 @@ export class SensorController {
   }
 
 
-  @Post('change_value_one_sensor_from_api')
+  @Post('change_limit_values_one_sensor')
   @HttpCode(200)
-  async changeValueOneSensor(@Body() dto: any) {
+  async changeLimitValuesOneSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
     if (!checkAccess) { // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
-    return await this.sensorService.changeValueOneSensor(dto);
+    return await this.sensorService.changeLimitValuesOneSensor(dto);
   }
 
-  @Post('change_designation_one_sensor_from_api')
-  @HttpCode(200)
-  async changeDesignationOneSensorFrom(@Body() dto: any) {
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
-      throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
-    }
-    return await this.sensorService.changeDesignationOneSensorFrom(dto);
-  }
+  // @Post('change_designation_one_sensor_from_api')
+  // @HttpCode(200)
+  // async changeDesignationOneSensorFrom(@Body() dto: any) {
+  //   const checkAccess = await this.checkService.checkUserAccess(dto.email);
+  //   if (!checkAccess) { // Проверяем, является ли пользователь администратором
+  //     throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+  //   }
+  //   return await this.sensorService.changeDesignationOneSensorFrom(dto);
+  // }
 
   @Post('delete_one_sensor_from_api')
   @HttpCode(200)

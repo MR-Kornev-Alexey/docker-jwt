@@ -5,6 +5,7 @@ import { join } from 'path';
 import express from 'express';
 import { GetDataSensorService } from './socketClient/getDataSensor.service';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -40,7 +41,7 @@ async function bootstrap() {
   app.enableCors(cors);
 
   // Serve static files
-  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
   try {
     await app.listen(5000, () => {

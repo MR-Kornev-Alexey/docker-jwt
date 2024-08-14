@@ -14,6 +14,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { sensorFormInput } from '../types/sensorFormInput';
 import { CheckService } from '../check/check.service';
 
+interface UploadFileDto {
+  id: string;
+}
 @Controller('sensors')
 export class SensorController {
   constructor(private readonly sensorService: SensorService,
@@ -156,14 +159,14 @@ export class SensorController {
 
 
 
-  @Post('set_null_for_one_sensor')
+  @Post('set_null_for_all_sensor_on_object')
   @HttpCode(200)
-  async setNullForOneSensor(@Body() dto: any) {
+  async setNullForAllSensorOnObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
     if (!checkAccess) { // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
-    return await this.sensorService.setNullForOneSensor(dto);
+    return await this.sensorService.setNullForAllSensorOnObject(dto);
   }
 
   @Post('change_parameters_for_one_object')
@@ -229,23 +232,26 @@ export class SensorController {
 
   @Post('save_file_about_sensor')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@Body() body: any,
-                   @UploadedFile(
-                     new ParseFilePipeBuilder()
-                       .addFileTypeValidator({
-                         fileType: 'pdf',
-                       })
-                       .addMaxSizeValidator({
-                         maxSize: 5000000, // just to you know it's possible.
-                       })
-                       .build({
-                         exceptionFactory(error) {
-                           throw new HttpException(error, HttpStatus.BAD_REQUEST);
-                         },
-                       }),
-                   )
-                     file: Express.Multer.File) {
+  async uploadFile(
+    @Body() body: UploadFileDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addMaxSizeValidator({ maxSize: 20000000 })
+        .build({
+          exceptionFactory(error) {
+            throw new HttpException(error, HttpStatus.BAD_REQUEST);
+          },
+        }),
+    )
+      file: Express.Multer.File,
+  ) {
+    // console.log('Received body:', body);
+    // console.log('Received file:', file);
+    if (!body.id) {
+      throw new HttpException('Sensor ID is required', HttpStatus.BAD_REQUEST);
+    }
     return await this.sensorService.saveFileAboutSensor(file, body.id);
   }
+
 }
 

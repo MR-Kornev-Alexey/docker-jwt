@@ -119,6 +119,7 @@ interface limitValuesDataSensor {
   maxQuantity: number;
   minQuantity: number;
 }
+
 interface inputLimitsValue {
   limitValuesDataSensor: limitValuesDataSensor;
   email: string;
@@ -151,7 +152,7 @@ export class SensorService {
     private dbService: PrismaService,
     private checkService: CheckService,
     private getDataSensorService: GetDataSensorService,
-    private calculateService: CalculateService
+    private calculateService: CalculateService,
   ) {
   }
 
@@ -309,7 +310,7 @@ export class SensorService {
           sensor_id: dto.additionalSensorsData.sensor_id,
         },
       });
-      dto.additionalSensorsData.coefficient = await this.calculateService.convertStringToNumber(dto.additionalSensorsData.coefficient)
+      dto.additionalSensorsData.coefficient = await this.calculateService.convertStringToNumber(dto.additionalSensorsData.coefficient);
       console.log('dto -', dto);
       let additionalDataForSensor;
 
@@ -600,7 +601,15 @@ export class SensorService {
   }
 
   async changeLimitValuesOneSensor(dto: inputLimitsValue) {
-    const { model, limitValue, emissionsQuantity, errorsQuantity, missedConsecutive, maxQuantity, minQuantity } = dto.limitValuesDataSensor;
+    const {
+      model,
+      limitValue,
+      emissionsQuantity,
+      errorsQuantity,
+      missedConsecutive,
+      maxQuantity,
+      minQuantity,
+    } = dto.limitValuesDataSensor;
 
     try {
       // Поиск сенсоров с заданной моделью и object_id
@@ -608,7 +617,7 @@ export class SensorService {
         where: {
           object_id: dto.limitValuesDataSensor.object_id,
           model: model,
-        }
+        },
       });
 
       if (matchingSensors.length === 0) {
@@ -623,8 +632,8 @@ export class SensorService {
         where: {
           sensor_id: {
             in: matchingSensors.map(sensor => sensor.id), // Используем массив id найденных сенсоров
-          }
-        }
+          },
+        },
       });
 
       if (additionalSensorInfos.length === 0) {
@@ -644,7 +653,7 @@ export class SensorService {
             minQuantity: minQuantity,
             maxQuantity: maxQuantity,
             missedConsecutive: missedConsecutive,
-          }
+          },
         });
       });
 
@@ -662,8 +671,6 @@ export class SensorService {
       };
     }
   }
-
-
 
 
   async changeDataForEmissionProcessing(dto: SensorEmissionDto) {
@@ -909,7 +916,6 @@ export class SensorService {
       };
     }
   }
-
   async changeStatusOneSensor(dto: any) {
     console.log('dto -', dto);
     try {
@@ -950,50 +956,39 @@ export class SensorService {
       };
     }
   }
-
-  async changeWarningOneSensor(dto: any) {
-    console.log('dto -', dto);
+  async setRequestParameterForSensor(dto: any) {
+    console.log('setRequestParameterForSensor - dto -', dto);
     try {
-      const sensor = await this.dbService.requestSensorInfo.findFirst({
-        where: {
-          sensor_id: dto.sensor_id,
-        },
-      });
-      if (!sensor) {
-        console.log(`Датчик с идентификатором ${dto.sensor_id} не найден`);
-        return {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Датчик с идентификатором ${dto.sensor_id} не найден`,
-        };
-      }
-
-      const updatedSensor = await this.dbService.requestSensorInfo.update({
-        where: {
-          id: sensor.id,
-        },
-        data: {
-          warning: !sensor.warning,
-        },
-      });
-      if (updatedSensor) {
-        const oneSensor = await this.dbService.new_Sensor.findFirst({
+      if (dto.parameter !== "base_zero") {
+        const findSensor = await this.dbService.requestSensorInfo.findFirst({
           where: {
-            id: dto.sensor_id,
-          },
-          include: {
-            object: true,
-            additional_sensor_info: true,
-            sensor_operation_log: true,
-            files: true,
-            requestSensorInfo: true,
-          },
-        });
-        return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
+            sensor_id: dto.sensor_id
+          }
+        })
+        console.log(findSensor)
+        if(findSensor) {
+          const updateSensor = await this.dbService.requestSensorInfo.update({
+            where: { id:findSensor.id},
+            data: {
+              [dto.parameter]: dto.value,
+            }
+          })
+          if(updateSensor) {
+            return this.getAllSensorsFromDb();
+          } else {
+            return {
+              statusCode: HttpStatus.NOT_MODIFIED,
+              message: 'Ошибка записи данных датчика'
+            };
+          }
+        } else {
+          return {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'Датчик не найден',
+          };
+        }
       } else {
-        return {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Ошибка 500 при изменении статуса  датчика',
-        };
+        return this.getAllSensorsFromDb();
       }
     } catch (error) {
       console.error('Ошибка при изменении статуса датчика:', error);
@@ -1003,7 +998,6 @@ export class SensorService {
       };
     }
   }
-
   async changeTimeRequestSensors(dto: any) {
     console.log('dto -', dto);
     try {

@@ -197,16 +197,6 @@ export class SensorController {
     return await this.sensorService.changeLimitValuesOneSensor(dto);
   }
 
-  // @Post('change_designation_one_sensor_from_api')
-  // @HttpCode(200)
-  // async changeDesignationOneSensorFrom(@Body() dto: any) {
-  //   const checkAccess = await this.checkService.checkUserAccess(dto.email);
-  //   if (!checkAccess) { // Проверяем, является ли пользователь администратором
-  //     throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
-  //   }
-  //   return await this.sensorService.changeDesignationOneSensorFrom(dto);
-  // }
-
   @Post('delete_one_sensor_from_api')
   @HttpCode(200)
   async deleteOneSensorFromApi(@Body() dto: any) {
@@ -227,14 +217,14 @@ export class SensorController {
     return await this.sensorService.changeTimeRequestSensors(dto);
   }
 
-  @Post('change_warning_one_sensor')
+  @Post('set_request_parameter_for_sensor')
   @HttpCode(200)
-  async changeWarningOneSensor(@Body() dto: any) {
+  async setRequestParameterForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
     if (!checkAccess) { // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
-    return await this.sensorService.changeWarningOneSensor(dto);
+    return await this.sensorService.setRequestParameterForSensor(dto);
   }
 
   @Post('save_file_about_sensor')

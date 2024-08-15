@@ -64,7 +64,6 @@ async function bootstrap() {
         logger.error('Error in callbackFunction:', error);
       }
     };
-
     // Initial call
     logger.log('info: ' + 'Starting socket client service for the first time');
     await socketClientService.sendAndScheduleRequest(callbackFunction);

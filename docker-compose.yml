@@ -21,7 +21,7 @@ services:
     container_name: nest-api
     restart: always
     ports:
-      - 8000:5000  # API should listen on port 5000 in the container
+      - 8000:5000  # API должен слушать на порту 5000 в контейнере
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,6 +29,8 @@ services:
         condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
+    volumes:
+      - uploads:/app/uploads  # Подключаем volume для хранения файлов
 
   tg-bot:
     command: node /app/telegamBot/telegram-bot-server.js
@@ -71,6 +73,7 @@ services:
       - '80:80'
     volumes:
       - ./nginx:/etc/nginx/conf.d
+      - uploads:/var/www/uploads  # Подключаем volume к Nginx
     command: [nginx-debug, '-g', 'daemon off;']
     restart: always
 
@@ -80,7 +83,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - '3002:3000'  # Port for frontend application
+      - '3002:3000'  # Порт для frontend приложения
     restart: always
 
   pgadmin:
@@ -95,3 +98,4 @@ services:
 
 volumes:
   postgres-data:
+  uploads:  # Volume для хранения файлов

@@ -28,6 +28,7 @@ services:
       migrations:
         condition: service_completed_successfully
     environment:
+      BASE_URL: http://89.108.76.29  # Добавляем переменную окружения BASE_URL для продакшна
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
     volumes:
       - uploads:/app/uploads  # Подключаем volume для хранения файлов

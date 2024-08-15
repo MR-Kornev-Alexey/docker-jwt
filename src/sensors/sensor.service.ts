@@ -6,7 +6,6 @@ import { sensorFormInput } from '../types/sensorFormInput';
 import * as path from 'path';
 import * as fs from 'fs';
 import { GetDataSensorService } from '../socketClient/getDataSensor.service';
-import e from 'express';
 import { CalculateService } from '../calculate/calculate.service';
 
 interface JSONData {
@@ -567,7 +566,7 @@ export class SensorService {
       fs.writeFileSync(filePath, file.buffer);
 
       // Create the file URL dynamically based on environment
-      const fileUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/uploads/${path.basename(file.originalname)}`;
+      const fileUrl = `${process.env.BASE_URL}/uploads/${path.basename(file.originalname)}`;
 
       console.log('Generated file URL:', fileUrl); // Log the file URL
 

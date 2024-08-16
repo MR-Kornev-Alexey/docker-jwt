@@ -17,7 +17,12 @@ export class ObjectService {
         const allObjects = await this.dbService.m_Object.findMany({
             include: {
                 organization: true, // Включаем связанную модель организации
-                Sensor: true, // Включаем связанные сенсоры
+                Sensor: {
+                    include: {
+                        requestSensorInfo: true,
+                        additional_sensor_info: true
+                    }
+                }
             },
         });
         return {statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allObjects: allObjects};

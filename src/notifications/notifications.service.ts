@@ -71,7 +71,7 @@ export class NotificationsService {
       const dateFilter = this.createDateFilter(undefined, undefined, 24);
       const allObject = await this.createListOfObjects(dto.email);
       const notifications = await this.getNotifications(dto.email, dateFilter, allObject);
-      return { statusCode: HttpStatus.OK, message: 'Operation completed successfully', notifications };
+      return { statusCode: HttpStatus.OK, message: 'Загрузка уведомлений прошла успешно', notifications };
     } catch (error) {
       return { statusCode: error.getStatus(), message: error.message };
     }
@@ -84,7 +84,7 @@ export class NotificationsService {
       const dateFilter = this.createDateFilter(startDate, endDate);
       const allObject = await this.createListOfObjects(dto.email);
       const notifications = await this.getNotifications(dto.email, dateFilter, allObject);
-      return { statusCode: HttpStatus.OK, message: 'Operation completed successfully', notifications };
+      return { statusCode: HttpStatus.OK, message: 'Загрузка уведомлений за указанный период прошла успешно', notifications };
     } catch (error) {
       return { statusCode: error.getStatus(), message: error.message };
     }

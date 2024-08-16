@@ -11,7 +11,8 @@ interface Period {
 interface InputData {
   period: Period;
   sensorIds: string[];
-  sensorId: string
+  sensorId: string;
+  objectIds: string[];
 }
 
 @Injectable()
@@ -60,9 +61,40 @@ export class SensorsDataService {
     }
   }
 
+  async getLastValuesDataForSelectedObjectsAnsSensors(dto: InputData) {
+    try {
+      const selectedObjects = await this.dbService.m_Object.findMany({
+        where: {
+          id: {
+            in: dto.objectIds
+          }
+        },
+        include: {
+          Sensor: {
+            include: {
+              requestSensorInfo: true,
+              additional_sensor_info: true
+            }
+          }
+        }
+      });
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное выполнение операции',
+        selectedObjects: selectedObjects
+      };
+
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Произошла ошибка при выполнении операции',
+        error: error.message
+      };
+    }
+  }
+
   async getSelectedSensorsLastData(dto: InputData) {
     console.log(dto);
-    console.log('sensorIds --', dto.sensorIds);
     try {
       const latestData = await this.dbService.requestSensorInfo.findMany({
         where: {
@@ -80,7 +112,12 @@ export class SensorsDataService {
       });
 
       if (latestData) {
-        return { statusCode: HttpStatus.OK, latestData: latestData, addData: addData, message: 'Успешное получение данных' };
+        return {
+          statusCode: HttpStatus.OK,
+          latestData: latestData,
+          addData: addData,
+          message: 'Успешное получение данных',
+        };
       } else {
         return { statusCode: HttpStatus.NOT_FOUND, latestData: [], message: 'Данные не найдены' };
       }
@@ -94,8 +131,6 @@ export class SensorsDataService {
     console.log(dto);
     const { sensorId, period } = dto;
     const { startDate, endDate } = period;
-
-
 
 
     try {
@@ -113,11 +148,11 @@ export class SensorsDataService {
           sensor_id: sensorId,
           created_at: {
             gte: start,
-            lte: end
+            lte: end,
           },
         },
       });
-      console.log(oneData)
+      console.log(oneData);
       // Check if data was found and return appropriate response
       if (oneData) {
         // Assuming addInfoData is defined somewhere in your service
@@ -160,7 +195,7 @@ export class SensorsDataService {
     const { sensorId } = dto;
     const oneData = await this.dbService.requestSensorInfo.findMany({
       where: {
-        sensor_id: sensorId
+        sensor_id: sensorId,
       },
     });
     if (oneData) {

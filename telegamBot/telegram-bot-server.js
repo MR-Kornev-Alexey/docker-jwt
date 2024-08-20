@@ -2,12 +2,16 @@ const { Telegraf, Scenes, session, Markup } = require('telegraf');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-
+require('dotenv').config();
 // Middleware for parsing JSON bodies
+
 app.use(bodyParser.json());
 
 // Initialize the Telegraf bot with the token
-const token = '7493939483:AAGWJGDmU0hSYlg2jYyUKXUqTPGMge62wgM';
+const token = process.env.BOT_TOKEN;
+if (!token) {
+  throw new Error('Bot token is required. Please set BOT_TOKEN in your .env file.');
+}
 const bot = new Telegraf(token);
 
 // Define your scenes
@@ -29,6 +33,7 @@ bot.use(stage.middleware());
 
 // Define the /start command
 bot.start(async (ctx) => {
+  console.log(ctx?.message?.from)
   await ctx.replyWithHTML(
     `<b>Добрый день ${ctx?.message?.from?.first_name || 'незнакомец'}!</b>\nПриветствую Вас в KisBot.\nВыберите в меню соответствующую команду`,
     Markup.keyboard([

@@ -1,7 +1,7 @@
 // sensor.service.ts
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { dataFromSensor } from '@prisma/client'; // Import the Prisma model
+import { dataFromSensor, Prisma } from '@prisma/client'; // Import the Prisma model
 
 interface Period {
   startDate: string;
@@ -13,6 +13,7 @@ interface InputData {
   sensorIds: string[];
   sensorId: string;
   objectIds: string[];
+  objectId: string;
 }
 
 @Injectable()
@@ -127,6 +128,74 @@ export class SensorsDataService {
     }
   }
 
+
+  async getGroupedDataForSelectedObject(dto: InputData) {
+    console.log(dto);
+    const { objectId, period } = dto;
+    const { startDate, endDate } = period;
+
+    try {
+      // Валидация входных данных (проверка формата дат)
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid date format. Please provide valid dates.',
+        };
+      }
+
+      // Получение данных из базы данных
+      const dataFromSensors = await this.dbService.dataFromSensor.findMany({
+        where: {
+          sensor: {
+            object: {
+              id: objectId, // Идентификатор объекта
+            },
+          },
+          created_at: {
+            gte: start, // Дата начала периода
+            lte: end,   // Дата конца периода
+          },
+        },
+        include: {
+          sensor: true, // Включить информацию о сенсоре
+        },
+      });
+
+      // Проверка на наличие данных
+      if (dataFromSensors.length === 0) {
+        return {
+          statusCode: HttpStatus.NO_CONTENT,
+          message: 'No data found for the selected period.',
+        };
+      }
+
+      // Успешный ответ
+      return {
+        statusCode: HttpStatus.OK,
+        groupedData: dataFromSensors,
+        message: 'Data successfully retrieved.',
+      };
+
+    } catch (error) {
+      // Обработка ошибок базы данных (например, ошибка соединения)
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Database error occurred.',
+          errorDetails: error.message, // Добавляем информацию об ошибке
+        };
+      }
+
+      // Обработка других ошибок (например, общая ошибка)
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'An unexpected error occurred.',
+        errorDetails: error.message, // Добавляем информацию об ошибке
+      };
+    }
+  }
   async getForLineOneSensorsLastData(dto: InputData) {
     console.log(dto);
     const { sensorId, period } = dto;

@@ -285,7 +285,7 @@ export class CalculateService {
     const details = await this.sensorUtilsService.getSensorAndObjectDetails(sensorId)
     const organizationId = details.object.organization.id;
     const errorsMessage = `На объекте ${details.object.name} ${details.object.address} датчик: ${details.model} ${details.designation} ошибка: ${message} `;
-    console.log(errorsMessage)
+    console.log('errorsMessage ---', errorsMessage)
     await this.sensorUtilsService.openingCheckAndSendMessageToTelegram(organizationId,errorsMessage);
     // await this.telegramService.sendMessage(1081994928, errorsMessage);
     await this.dbService.sensorErrorsLog.create( {  data: {

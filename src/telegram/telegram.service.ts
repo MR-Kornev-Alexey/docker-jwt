@@ -10,7 +10,7 @@ export class TelegramService {
   async sendMessage(chatId: number, message: string): Promise<void> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post('http://tg-bot:3001/message', {
+        this.httpService.post('http://localhost:3001/message', {
           chatId,
           message,
         })

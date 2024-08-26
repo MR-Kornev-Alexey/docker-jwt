@@ -3,6 +3,8 @@ FROM node:21 AS builder
 WORKDIR /app
 
 COPY .env ./
+COPY .env /app/telegamBot/
+
 COPY package*.json ./
 COPY prisma ./prisma/
 # Установка Prisma CLI глобально

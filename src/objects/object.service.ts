@@ -11,8 +11,6 @@ export class ObjectService {
         private checkService: CheckService // Внедряем CheckService
     ) {
     }
-
-    // Функция для получения всех объектов из базы данных
     async getAllObjectsFromDb() {
         const allObjects = await this.dbService.m_Object.findMany({
             include: {
@@ -28,6 +26,104 @@ export class ObjectService {
         return {statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allObjects: allObjects};
     }
 
+    async deleteOneObject(dto: ObjectFormInput) {
+        console.log("dto -", dto);
+        const { objectId } = dto;
+        try {
+            // Проверяем, существует ли организация
+            const findObject = await this.dbService.m_Object.findFirst({
+                where: { id: objectId },
+            });
+            if (!findObject) {
+                return {
+                    statusCode: HttpStatus.NOT_FOUND,
+                    message: `Объект не найден`,
+                };
+            }
+            await this.dbService.$transaction(async (prisma) => {
+                // Удаляем данные, связанные с сенсорами, начиная с зависимых таблиц
+                await prisma.additionalSensorInfo.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                await prisma.sensorOperationLog.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                await prisma.sensorErrorsLog.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                await prisma.sensorFile.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                await prisma.requestSensorInfo.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                await prisma.dataFromSensor.deleteMany({
+                    where: {
+                        sensor: {
+                            object: {
+                                id: objectId,
+                            },
+                        },
+                    },
+                });
+
+                // Удаляем датчики, привязанные к объекту
+                await prisma.new_Sensor.deleteMany({
+                    where: {
+                        object: {
+                            id: objectId
+                        },
+                    },
+                });
+                // Удаляем объект
+                await prisma.m_Object.delete({
+                    where: {   id: objectId },
+                });
+            });
+            return this.getAllObjectsFromDb();
+        } catch (error) {
+            console.error('Ошибка при удалении объекта:', error);
+            return {
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: `Ошибка при удалении данных: ${error.message}`,
+            };
+        }
+    }
     async createNewObject(dto: ObjectFormInput) {
         console.log("dto -", dto);
 

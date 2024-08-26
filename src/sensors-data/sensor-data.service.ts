@@ -14,6 +14,7 @@ interface InputData {
   sensorId: string;
   objectIds: string[];
   objectId: string;
+  selectedSensors: string[];
 }
 
 @Injectable()
@@ -63,15 +64,19 @@ export class SensorsDataService {
   }
 
   async getLastValuesDataForSelectedObjectsAnsSensors(dto: InputData) {
+    console.log(dto)
     try {
-      const selectedObjects = await this.dbService.m_Object.findMany({
+      const selectedObject = await this.dbService.m_Object.findMany({
         where: {
-          id: {
-            in: dto.objectIds
-          }
+          id: dto.objectId
         },
         include: {
           Sensor: {
+            where: {
+              id: {
+                in: dto.sensorIds
+              }
+            },
             include: {
               requestSensorInfo: true,
               additional_sensor_info: true
@@ -82,9 +87,8 @@ export class SensorsDataService {
       return {
         statusCode: HttpStatus.OK,
         message: 'Успешное выполнение операции',
-        selectedObjects: selectedObjects
+        selectedObject: selectedObject
       };
-
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -131,7 +135,7 @@ export class SensorsDataService {
 
   async getGroupedDataForSelectedObject(dto: InputData) {
     console.log(dto);
-    const { objectId, period } = dto;
+    const { objectId, period, selectedSensors } = dto;
     const { startDate, endDate } = period;
 
     try {
@@ -141,13 +145,17 @@ export class SensorsDataService {
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Invalid date format. Please provide valid dates.',
+          message: 'Неверный формат даты. Укажите допустимые даты.',
+          groupedData: [],
         };
       }
 
-      // Получение данных из базы данных
+      // Получение данных из базы данных для выбранных датчиков
       const dataFromSensors = await this.dbService.dataFromSensor.findMany({
         where: {
+          sensor_id: {
+            in: selectedSensors, // Фильтрация по выбранным датчикам
+          },
           sensor: {
             object: {
               id: objectId, // Идентификатор объекта
@@ -167,7 +175,8 @@ export class SensorsDataService {
       if (dataFromSensors.length === 0) {
         return {
           statusCode: HttpStatus.NO_CONTENT,
-          message: 'No data found for the selected period.',
+          message: 'Данные за выбранный период и/или датчики не найдены.',
+          groupedData: [],
         };
       }
 
@@ -175,7 +184,7 @@ export class SensorsDataService {
       return {
         statusCode: HttpStatus.OK,
         groupedData: dataFromSensors,
-        message: 'Data successfully retrieved.',
+        message: 'Успешное получение данных.',
       };
 
     } catch (error) {
@@ -183,7 +192,7 @@ export class SensorsDataService {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Database error occurred.',
+          message: 'Произошла ошибка базы данных.',
           errorDetails: error.message, // Добавляем информацию об ошибке
         };
       }
@@ -191,11 +200,12 @@ export class SensorsDataService {
       // Обработка других ошибок (например, общая ошибка)
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'An unexpected error occurred.',
+        message: 'Произошла непредвиденная ошибка.',
         errorDetails: error.message, // Добавляем информацию об ошибке
       };
     }
   }
+
   async getForLineOneSensorsLastData(dto: InputData) {
     console.log(dto);
     const { sensorId, period } = dto;

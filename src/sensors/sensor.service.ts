@@ -124,6 +124,12 @@ interface inputLimitsValue {
   email: string;
 }
 
+interface inputData {
+  id: string;
+  designation: string;
+  email: string;
+}
+
 // Adjust SensorModel to match the shape of your sensor model
 type SensorModel = {
   id: string;
@@ -597,6 +603,45 @@ export class SensorService {
     }
   }
 
+  async changeDesignationOneSensorFromApi(dto: inputData) {
+    console.log(dto);
+    try{
+      const foundSensor = await this.dbService.new_Sensor.findFirst({
+        where: {
+          id: dto.id,
+        },
+      });
+      if (foundSensor) {
+        const updateSensor = await this.dbService.new_Sensor.update({
+          where: {
+            id: dto.id,
+          },
+          data: {
+            designation: dto.designation,
+          },
+        });
+        if (updateSensor) {
+          return this.getAllSensorsFromDb();
+        } else {
+          return {
+            statusCode: HttpStatus.NOT_MODIFIED,
+            message: `Ошибка изменения данных `,
+          };
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `Сенсор не найден`,
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при изменении датчика',
+      };
+    }
+  }
 
   async changeLimitValuesOneSensor(dto: inputLimitsValue) {
     const {
@@ -935,7 +980,6 @@ export class SensorService {
       };
     }
   }
-
 
 
   async changeStatusOneSensor(dto: any) {

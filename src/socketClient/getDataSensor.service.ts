@@ -33,13 +33,14 @@ export class GetDataSensorService {
       return { ip, port: Number(port) }; // Convert port to a number
     };
 
-    const calculateLength = (requestCode: string, inputCode: string) => {
-      console.log('requestCode.length ---', requestCode.length);
-      switch (requestCode.length) {
-        case 5:
+    const calculateLength = async (model: string, inputCode: string) => {
+      switch (model) {
+        case "РФ-251":
           return inputCode.substring(0, 28); // длина 14
-        case 17:
+        case "ИН-Д3":
           return inputCode.substring(0, 24); // длина 10
+        case "LS5":
+          return inputCode.substring(0, 22); // длина 8
         default:
           return inputCode;
       }
@@ -57,10 +58,11 @@ export class GetDataSensorService {
     if (responseDataOfSensors.length !== 0) {
       let i = 0;
       do {
-        const sensor = responseDataOfSensors[i];
+        const sensor =  responseDataOfSensors[i];
         const { ip, port } = parseIpAddress(sensor);
         const code: string = sensor.requestSensorInfo[0].request_code;
         const delay: number = sensor.requestSensorInfo[0].periodicity;
+        const model: string = sensor.model;
         const sensorId = sensor.id;
         try {
           const responseData = await this.sendRequestWithTimeout(ip, port, code, sensorId, 60000); // Тайм-аут 90 секунд
@@ -68,9 +70,10 @@ export class GetDataSensorService {
             const allResponseData: AllResponseData = {
               sensor_id: sensor.id.toString(),
               request_code: code.toString(),
-              answer_code: calculateLength(code.toString(), responseData.toString('hex')),
+              answer_code: await calculateLength(model, responseData.toString('hex')),
               created_at: new Date(),
             };
+            console.log('responseData -- ', allResponseData)
             await this.dbService.dataFromSensor.create({ data: allResponseData });
             await this.calculateService.convertDataForCreate(allResponseData, sensor.model);
             await this.sseService.send(allResponseData);

@@ -9,6 +9,8 @@ app.use(bodyParser.json());
 
 // Initialize the Telegraf bot with the token
 const token = process.env.BOT_TOKEN;
+console.log(`Token is: ${token}`);
+
 if (!token) {
   throw new Error('Bot token is required. Please set BOT_TOKEN in your .env file.');
 }

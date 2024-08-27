@@ -132,22 +132,29 @@ export class SensorsDataService {
     }
   }
 
-
   async getGroupedDataForSelectedObject(dto: InputData) {
     console.log(dto);
     const { objectId, period, selectedSensors } = dto;
-    const { startDate, endDate } = period;
+    let { startDate, endDate } = period;
 
     try {
-      // Валидация входных данных (проверка формата дат)
+      // Валидация и исправление входных данных (проверка формата дат и их логики)
       const start = new Date(startDate);
       const end = new Date(endDate);
+
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Неверный формат даты. Укажите допустимые даты.',
           groupedData: [],
         };
+      }
+
+      // Проверка, что endDate не раньше startDate, если так, меняем их местами
+      if (end < start) {
+        const temp = startDate;
+        startDate = endDate;
+        endDate = temp;
       }
 
       // Получение данных из базы данных для выбранных датчиков
@@ -162,8 +169,8 @@ export class SensorsDataService {
             },
           },
           created_at: {
-            gte: start, // Дата начала периода
-            lte: end,   // Дата конца периода
+            gte: new Date(startDate), // Дата начала периода
+            lte: new Date(endDate),   // Дата конца периода
           },
         },
         include: {
@@ -205,6 +212,7 @@ export class SensorsDataService {
       };
     }
   }
+
 
   async getForLineOneSensorsLastData(dto: InputData) {
     console.log(dto);

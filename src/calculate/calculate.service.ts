@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SseService } from '../sse/sse.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { SensorUtilsService } from '../utils/sensor-utils.service';
+import hexToAsciiAndConvert from './parse-sensor-ls5';
 interface ParsedDataInD3 {
   angleX: number;
   angleY: number;
@@ -15,6 +16,10 @@ interface ParsedDataRf251 {
   distance: number;
   temperature: number;
 }
+interface ParsedDataLS5 {
+  distance: number;
+}
+
 
 // Интерфейс для результата вычислений
 interface CalculatedValues {
@@ -103,6 +108,15 @@ export class CalculateService {
           lastValueZ: 0,
         };
       }
+      case 'LS5': {
+        const parsedDataLs5: number = hexToAsciiAndConvert(code, coefficient);
+        return {
+          lastValueX: 0,
+          lastValueY: parsedDataLs5,
+          lastBaseValue: parsedDataLs5,
+          lastValueZ: 0,
+        };
+      }
       default:
         return {
           lastValueX: null,
@@ -114,6 +128,7 @@ export class CalculateService {
   }
 
   async convertDataForCreate(entry: Entry, model: string): Promise<void> {
+
     try{
       const prevDataSensor: SensorInfo = await this.dbService.requestSensorInfo.findFirst({
       where: {
@@ -128,12 +143,10 @@ export class CalculateService {
 
       const calculateValues = await this.calculateALLValues(model, entry.answer_code, foundLimitValues.coefficient);
       const lastValues = calculateValues.lastBaseValue;
-
       if (lastValues === null || lastValues === undefined) {
         await this.handleCheckAndIncrementCounterError(prevDataSensor, foundLimitValues);
         return;
       }
-
       const limitValues = foundLimitValues.limitValue;
       const maxValues = prevDataSensor.max_base;
       const minValues = prevDataSensor.min_base;

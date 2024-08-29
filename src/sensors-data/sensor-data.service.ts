@@ -152,9 +152,7 @@ export class SensorsDataService {
 
       // Проверка, что endDate не раньше startDate, если так, меняем их местами
       if (end < start) {
-        const temp = startDate;
-        startDate = endDate;
-        endDate = temp;
+        [startDate, endDate] = [endDate, startDate];
       }
 
       // Получение данных из базы данных для выбранных датчиков
@@ -174,7 +172,11 @@ export class SensorsDataService {
           },
         },
         include: {
-          sensor: true, // Включить информацию о сенсоре
+          sensor: {
+            include: {
+              additional_sensor_info: true, // Включение дополнительной информации о сенсоре, если она есть
+            }
+          }
         },
       });
 
@@ -212,6 +214,7 @@ export class SensorsDataService {
       };
     }
   }
+
 
 
   async getForLineOneSensorsLastData(dto: InputData) {

@@ -63,6 +63,82 @@ export class SensorsDataService {
     }
   }
 
+  async getLastValuesDataForDynamicCharts(dto: InputData) {
+    console.log(dto);
+    const { objectId,  sensorIds } = dto;
+
+    try {
+      // Массив для хранения данных по всем датчикам
+      const groupedData = [];
+
+      // Проходим по каждому выбранному датчику
+      for (const sensorId of  sensorIds) {
+        // Получаем последние 10 записей для текущего датчика
+        const dataForSensor = await this.dbService.dataFromSensor.findMany({
+          where: {
+            sensor_id: sensorId, // Идентификатор датчика
+            sensor: {
+              object_id: objectId, // Идентификатор объекта
+            },
+          },
+          orderBy: {
+            created_at: 'desc', // Сортировка по дате создания в порядке убывания (от новых к старым)
+          },
+          take: 12, // Ограничение на последние 10 записей
+          include: {
+            sensor: {
+              include: {
+                additional_sensor_info: true,
+                requestSensorInfo: true,
+              },
+            },
+          },
+        });
+
+        // Если для датчика найдены данные, добавляем их в общий массив
+        if (dataForSensor.length > 0) {
+          groupedData.push({
+            sensorId,
+            data: dataForSensor,
+          });
+        }
+      }
+
+      // Проверка на наличие данных по всем датчикам
+      if (groupedData.length === 0) {
+        return {
+          statusCode: HttpStatus.NO_CONTENT,
+          message: 'Нет данных для выбранных датчиков.',
+          groupedData: [],
+        };
+      }
+
+      // Успешный ответ
+      return {
+        statusCode: HttpStatus.OK,
+        groupedData,
+        message: 'Успешное получение данных.',
+      };
+
+    } catch (error) {
+      // Обработка ошибок базы данных (например, ошибка соединения)
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Произошла ошибка базы данных.',
+          errorDetails: error.message, // Добавляем информацию об ошибке
+        };
+      }
+
+      // Обработка других ошибок (например, общая ошибка)
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Произошла непредвиденная ошибка.',
+        errorDetails: error.message, // Добавляем информацию об ошибке
+      };
+    }
+  }
+
   async getLastValuesDataForSelectedObjectsAnsSensors(dto: InputData) {
     console.log(dto)
     try {

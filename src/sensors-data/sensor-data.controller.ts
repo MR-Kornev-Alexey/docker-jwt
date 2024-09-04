@@ -30,6 +30,16 @@ export class SensorsDataController {
         return await this.sensorsDataService.getLastValuesDataForSelectedObjectsAnsSensors(dto);
     }
 
+    @Post('get_last_values_data_for_dynamic_charts')
+    @HttpCode(200)
+    async getLastValuesDataForDynamicCharts(@Body() dto: any) {
+        const checkAccess = await this.checkService.checkUserAccess(dto.email);
+        if (!checkAccess) { // Проверяем, является ли пользователь администратором
+            throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
+        }
+        return await this.sensorsDataService.getLastValuesDataForDynamicCharts(dto);
+    }
+
     @Post('get_selected_sensors_last_data')
     @HttpCode(200)
     async getSelectedSensorsLastData(@Body() dto: any) {

@@ -937,15 +937,29 @@ export class SensorService {
         };
       }
 
-      // Update the object directly
+      // Проверяем, есть ли у всех сенсоров данные о `last_base_value`
+      const hasMissingData = foundObject.Sensor.some(sensor => {
+        const requestSensorInfo = sensor.requestSensorInfo[0];
+        return !requestSensorInfo?.last_base_value;
+      });
+
+      if (hasMissingData) {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Установка нуля не возможна, так как по некоторым сенсорам на объекте нет полученных данных.',
+        };
+      }
+
+      // Update the object directly (even if there's no sensor update)
       await this.dbService.m_Object.update({
         where: { id: dto.object_id },
         data: { set_null: dto.set_null },
       });
 
-      // Determine the update data based on the dto.set_null flag
+      // Process sensors only if `last_base_value` is available
       const sensorUpdates = foundObject.Sensor.map(sensor => {
         const requestSensorInfo = sensor.requestSensorInfo[0];
+
         let updateData;
 
         if (dto.set_null) {
@@ -970,8 +984,28 @@ export class SensorService {
         });
       });
 
+      // Perform the updates only for valid sensors
       await Promise.all(sensorUpdates);
-      return this.getAllSensorsFromDb();
+
+      const allObjects = await this.dbService.m_Object.findMany({
+        include: {
+          organization: true, // Включаем связанную модель организации
+          Sensor: {
+            include: {
+              requestSensorInfo: true,
+              additional_sensor_info: true,
+            },
+          },
+        },
+      });
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное обновление данных',
+        allSensors: await this.getAllSensorsWithNotStatus(),
+        allObjects: allObjects,
+      };
+
     } catch (error) {
       console.error('Error updating sensors:', error);
       return {

@@ -26,6 +26,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:5000',
+      'http://vomit.mrk.digital',
       'http://80.78.245.91',
       'http://localhost',
       '*',

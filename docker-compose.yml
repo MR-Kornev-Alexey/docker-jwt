@@ -57,9 +57,12 @@ services:
       - 5433:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./path/to/pg_logs:/var/log/postgresql  # Монтируем папку для логов
+      - ./path/to/postgresql-config/postgresql.conf:/etc/postgresql/postgresql.conf  # Монтируем конфигурационный файл
     environment:
       POSTGRES_DB: common_db
     user: postgres
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'   # Указываем путь к конфигурации
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d common_db -U postgres"]
       interval: 10s

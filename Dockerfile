@@ -1,9 +1,12 @@
-FROM node:21 AS builder
+FROM node:22 AS builder
 
 WORKDIR /app
 
 COPY .env ./
 COPY .env /app/telegamBot/
+
+RUN ls -la /app/
+RUN ls -la /app/telegamBot/
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -17,7 +20,7 @@ RUN npx prisma generate
 
 RUN npm run build
 
-FROM node:21
+FROM node:22
 
 RUN mkdir -p /app/
 WORKDIR /app/

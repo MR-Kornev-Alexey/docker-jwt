@@ -1,4 +1,6 @@
-version: '3.8'
+x-environment:
+  &default-environment
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
 
 services:
   migrations:
@@ -12,7 +14,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
+      <<: *default-environment
 
   nest-api:
     build:
@@ -28,8 +30,8 @@ services:
       migrations:
         condition: service_completed_successfully
     environment:
-      BASE_URL: http://89.108.76.29  # Добавляем переменную окружения BASE_URL для продакшна
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
+      BASE_URL: http://80.78.245.91  # Переменная окружения для API
+      <<: *default-environment
     volumes:
       - uploads:/app/uploads  # Подключаем volume для хранения файлов
 
@@ -46,7 +48,7 @@ services:
       migrations:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/common_db?schema=public
+      <<: *default-environment
 
   postgres:
     image: postgres
@@ -54,17 +56,19 @@ services:
     env_file:
       - .env
     ports:
-      - 5433:5432
+      - 5435:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./path/to/pg_logs:/var/log/postgresql  # Монтируем папку для логов
-      - ./path/to/postgresql-config/postgresql.conf:/etc/postgresql/postgresql.conf  # Монтируем конфигурационный файл
+      - ./path/to/pg_logs:/var/log/postgresql  # Логи
+      - ./path/to/postgresql-config/postgresql.conf:/etc/postgresql/postgresql.conf  # Конфигурация
     environment:
-      POSTGRES_DB: common_db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     user: postgres
-    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'   # Указываем путь к конфигурации
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d common_db -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -87,17 +91,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - '3002:3000'  # Порт для frontend приложения
-    restart: always
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4
-    ports:
-      - '3003:80'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: alex@mrk.digital
-      PGADMIN_DEFAULT_PASSWORD: qwertyuiop
+      - '3000:3000'
     restart: always
 
 volumes:

@@ -8,10 +8,8 @@ require('dotenv').config();
 app.use(bodyParser.json());
 
 // Initialize the Telegraf bot with the token
-const token = '7493939483:AAGWJGDmU0hSYlg2jYyUKXUqTPGMge62wgM';
-// const token = process.env.BOT_TOKEN;
+const token = '7493939483:AAFq_c5d-XAAkFfYdqlqr4j0oSb_rG1Kqzk';
 
-console.log(`Token is: ${token}`);
 
 if (!token) {
   throw new Error('Bot token is required. Please set BOT_TOKEN in your .env file.');

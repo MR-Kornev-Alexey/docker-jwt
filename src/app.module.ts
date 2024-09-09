@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -26,6 +27,7 @@ import { SensorUtilsService } from './utils/sensor-utils.service';
 import { NotifyController } from './notify/notify-controller';
 import { NotifyService } from './notify/notify.service';
 import { TelegramModule } from './telegram/telegram.module';
+
 @Module({
   controllers: [
     AppController,
@@ -35,7 +37,7 @@ import { TelegramModule } from './telegram/telegram.module';
     SensorController,
     SensorsDataController,
     NotificationsController,
-    NotifyController
+    NotifyController,
   ],
   providers: [
     AppService,
@@ -49,7 +51,7 @@ import { TelegramModule } from './telegram/telegram.module';
     SensorsDataService,
     NotificationsService,
     SensorUtilsService,
-    NotifyService
+    NotifyService,
   ],
   imports: [
     AuthModule,
@@ -58,9 +60,11 @@ import { TelegramModule } from './telegram/telegram.module';
     SseModule,
     CalculateModule,
     LoggerModule,
-    TelegramModule
+    TelegramModule,
+    ConfigModule.forRoot({
+      isGlobal: true, // делает доступным ConfigService во всем приложении без необходимости повторного импорта
+    }),
   ],
-  exports: [CheckService, SensorUtilsService]
+  exports: [CheckService, SensorUtilsService],
 })
 export class AppModule {}
-

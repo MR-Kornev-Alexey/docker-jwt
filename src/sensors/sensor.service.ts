@@ -22,8 +22,8 @@ interface SensorEmissionDto {
   emissionsQuantity: number;
   errorsQuantity: number;
   missedConsecutive: number;
-  maxQuantity: number,
-  minQuantity: number
+  maxQuantity: number;
+  minQuantity: number;
 }
 
 // Интерфейсы для связанных данных
@@ -152,14 +152,12 @@ type SensorModel = {
 
 @Injectable()
 export class SensorService {
-
   constructor(
     private dbService: PrismaService,
     private checkService: CheckService,
     private getDataSensorService: GetDataSensorService,
     private calculateService: CalculateService,
-  ) {
-  }
+  ) {}
 
   async saveSensorsData(objectId, sensorsData) {
     // Проходим по каждой строке в массиве sensorsData
@@ -199,12 +197,16 @@ export class SensorService {
     };
   }
 
-  async setRequestDataForOneSensor(dto: { email: string; requestDataForSensor: any }) {
+  async setRequestDataForOneSensor(dto: {
+    email: string;
+    requestDataForSensor: any;
+  }) {
     console.log('dto -', dto);
     try {
-      const createRequestDataForSensor = await this.dbService.requestSensorInfo.create({
-        data: dto.requestDataForSensor,
-      });
+      const createRequestDataForSensor =
+        await this.dbService.requestSensorInfo.create({
+          data: dto.requestDataForSensor,
+        });
       if (createRequestDataForSensor) {
         return {
           statusCode: HttpStatus.OK,
@@ -215,9 +217,11 @@ export class SensorService {
         // Если создание объекта не удалось, выбрасываем ошибку
         throw new Error('Ошибка при записи данных о датчике');
       }
-
     } catch (error) {
-      return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при записи данных' };
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при записи данных',
+      };
     }
   }
 
@@ -296,7 +300,6 @@ export class SensorService {
           message: 'Данные датчика не найдены',
         };
       }
-
     } catch (error) {
       console.error('Error updating sensor parameter:', error);
       return {
@@ -306,7 +309,10 @@ export class SensorService {
     }
   }
 
-  async setAdditionalDataForSensor(dto: { email: string; additionalSensorsData: any }) {
+  async setAdditionalDataForSensor(dto: {
+    email: string;
+    additionalSensorsData: any;
+  }) {
     console.log('dto -', dto);
     try {
       const findSensor = await this.dbService.additionalSensorInfo.findFirst({
@@ -314,21 +320,26 @@ export class SensorService {
           sensor_id: dto.additionalSensorsData.sensor_id,
         },
       });
-      dto.additionalSensorsData.coefficient = await this.calculateService.convertStringToNumber(dto.additionalSensorsData.coefficient);
+      dto.additionalSensorsData.coefficient =
+        await this.calculateService.convertStringToNumber(
+          dto.additionalSensorsData.coefficient,
+        );
       console.log('dto -', dto);
       let additionalDataForSensor;
 
       if (findSensor) {
-        additionalDataForSensor = await this.dbService.additionalSensorInfo.update({
-          where: {
-            id: findSensor.id,
-          },
-          data: dto.additionalSensorsData,
-        });
+        additionalDataForSensor =
+          await this.dbService.additionalSensorInfo.update({
+            where: {
+              id: findSensor.id,
+            },
+            data: dto.additionalSensorsData,
+          });
       } else {
-        additionalDataForSensor = await this.dbService.additionalSensorInfo.create({
-          data: dto.additionalSensorsData,
-        });
+        additionalDataForSensor =
+          await this.dbService.additionalSensorInfo.create({
+            data: dto.additionalSensorsData,
+          });
       }
       if (additionalDataForSensor) {
         return await this.getAllSensorsFromDb();
@@ -346,7 +357,6 @@ export class SensorService {
     }
   }
 
-
   async initAllNewTypeSensor(dto: { email: string; jsonData: JSONData }) {
     console.log('dto -', dto);
     // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
@@ -361,18 +371,19 @@ export class SensorService {
             create: {
               sensor_key: sensorKey,
               sensor_type: sensorData.type,
-              models: Array.isArray(sensorData.model) ? sensorData.model : [sensorData.model],
+              models: Array.isArray(sensorData.model)
+                ? sensorData.model
+                : [sensorData.model],
             },
           });
         }
-        return {
-          statusCode: HttpStatus.OK,
-          message: 'Успешный запрос',
-          allSensors: await this.getAllTypeSensorsFromDb(),
-        };
+        return await this.getAllTypeSensorsFromDb();
       } catch (error) {
         // Обрабатываем ошибку при создании объекта
-        return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при записи данных' };
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Ошибка 500 при записи данных',
+        };
       }
     } else {
       // Если доступ запрещен, возвращаем соответствующий статус и сообщение
@@ -380,13 +391,12 @@ export class SensorService {
     }
   }
 
-
   async getAllSensorsWithNotStatus() {
     return this.dbService.new_Sensor.findMany({
       include: {
         object: true,
         additional_sensor_info: true, // Включаем связанную модель организации
-        sensor_operation_log: true,   // Включаем связанные сенсоры
+        sensor_operation_log: true, // Включаем связанные сенсоры
         files: true,
         requestSensorInfo: true,
         error_information: true,
@@ -402,13 +412,13 @@ export class SensorService {
     });
   }
 
-// Использование Prisma типов
+  // Использование Prisma типов
   async getAllSensorsFromDb(): Promise<any> {
     const allSensors = await this.dbService.new_Sensor.findMany({
       include: {
         object: true,
         additional_sensor_info: true, // Включаем связанную модель организации
-        sensor_operation_log: true,   // Включаем связанные сенсоры
+        sensor_operation_log: true, // Включаем связанные сенсоры
         files: true,
         requestSensorInfo: true,
         error_information: true,
@@ -429,12 +439,14 @@ export class SensorService {
     };
   }
 
-
   async getAllTypeSensorsFromDb() {
     const allSensorsType = await this.dbService.type_Sensor.findMany();
-    return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', allSensorsType: allSensorsType };
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Успешное выполнение операции',
+      allSensorsType: allSensorsType,
+    };
   }
-
 
   async setOneSensorDuplicate(dto: sensorFormInput) {
     console.log('dto -- setOneSensorDuplicate', dto);
@@ -475,7 +487,9 @@ export class SensorService {
   private async createSensorRecord(sensorData: any, requestData: any) {
     try {
       sensorData.network_number = Number(sensorData.network_number);
-      const createSensor = await this.dbService.new_Sensor.create({ data: sensorData });
+      const createSensor = await this.dbService.new_Sensor.create({
+        data: sensorData,
+      });
       if (!createSensor) {
         throw new Error('Error creating sensor record');
       }
@@ -503,7 +517,6 @@ export class SensorService {
     }
   }
 
-
   async getAllSensors(dto: { email: string }) {
     console.log('dto -', dto);
     // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
@@ -516,8 +529,7 @@ export class SensorService {
     }
   }
 
-
-  async getAllDataAboutOneSensor(dto: { email: string, id: string }) {
+  async getAllDataAboutOneSensor(dto: { email: string; id: string }) {
     console.log('dto -', dto);
     // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
@@ -535,7 +547,11 @@ export class SensorService {
           error_information: true,
         },
       });
-      return { statusCode: HttpStatus.OK, message: 'Успешное выполнение операции', oneSensor: oneSensor };
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Успешное выполнение операции',
+        oneSensor: oneSensor,
+      };
     } else {
       // Если доступ запрещен, возвращаем соответствующий статус и сообщение
       return { statusCode: HttpStatus.FORBIDDEN, message: 'Доступ запрещен' };
@@ -605,7 +621,7 @@ export class SensorService {
 
   async changeDesignationOneSensorFromApi(dto: inputData) {
     console.log(dto);
-    try{
+    try {
       const foundSensor = await this.dbService.new_Sensor.findFirst({
         where: {
           id: dto.id,
@@ -671,13 +687,14 @@ export class SensorService {
       }
 
       // Поиск записей в additionalSensorInfo, связанных с найденными сенсорами
-      const additionalSensorInfos = await this.dbService.additionalSensorInfo.findMany({
-        where: {
-          sensor_id: {
-            in: matchingSensors.map(sensor => sensor.id), // Используем массив id найденных сенсоров
+      const additionalSensorInfos =
+        await this.dbService.additionalSensorInfo.findMany({
+          where: {
+            sensor_id: {
+              in: matchingSensors.map((sensor) => sensor.id), // Используем массив id найденных сенсоров
+            },
           },
-        },
-      });
+        });
 
       if (additionalSensorInfos.length === 0) {
         return {
@@ -686,7 +703,7 @@ export class SensorService {
         };
       }
 
-      const updatePromises = additionalSensorInfos.map(info => {
+      const updatePromises = additionalSensorInfos.map((info) => {
         return this.dbService.additionalSensorInfo.update({
           where: { id: info.id }, // Здесь используется уникальный идентификатор записи
           data: {
@@ -705,7 +722,6 @@ export class SensorService {
 
       // Возвращаем обновленный список датчиков
       return this.getAllSensorsFromDb();
-
     } catch (error) {
       console.error('Ошибка:', error);
       return {
@@ -714,7 +730,6 @@ export class SensorService {
       };
     }
   }
-
 
   async changeDataForEmissionProcessing(dto: SensorEmissionDto) {
     try {
@@ -730,11 +745,12 @@ export class SensorService {
 
       if (findSensors.length > 0) {
         for (const sensor of findSensors) {
-          const findSensor = await this.dbService.additionalSensorInfo.findFirst({
-            where: {
-              sensor_id: sensor.id,
-            },
-          });
+          const findSensor =
+            await this.dbService.additionalSensorInfo.findFirst({
+              where: {
+                sensor_id: sensor.id,
+              },
+            });
 
           if (findSensor) {
             try {
@@ -772,7 +788,10 @@ export class SensorService {
                 },
               });
             } catch (createError) {
-              console.error(`Error creating additional info for sensor ${sensor.id}:`, createError);
+              console.error(
+                `Error creating additional info for sensor ${sensor.id}:`,
+                createError,
+              );
               return {
                 statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
                 message: `Error creating additional info for sensor ${sensor.id}`,
@@ -903,7 +922,10 @@ export class SensorService {
           }),
         };
       } else {
-        return { statusCode: HttpStatus.BAD_REQUEST, message: 'Объект не найден' };
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Объект не найден',
+        };
       }
     } catch (error) {
       console.error('Ошибка при изменении датчика:', error);
@@ -938,7 +960,7 @@ export class SensorService {
       }
 
       // Проверяем, есть ли у всех сенсоров данные о `last_base_value`
-      const hasMissingData = foundObject.Sensor.some(sensor => {
+      const hasMissingData = foundObject.Sensor.some((sensor) => {
         const requestSensorInfo = sensor.requestSensorInfo[0];
         return !requestSensorInfo?.last_base_value;
       });
@@ -946,7 +968,8 @@ export class SensorService {
       if (hasMissingData) {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Установка нуля не возможна, так как по некоторым сенсорам на объекте нет полученных данных.',
+          message:
+            'Установка нуля не возможна, так как по некоторым сенсорам на объекте нет полученных данных.',
         };
       }
 
@@ -957,7 +980,7 @@ export class SensorService {
       });
 
       // Process sensors only if `last_base_value` is available
-      const sensorUpdates = foundObject.Sensor.map(sensor => {
+      const sensorUpdates = foundObject.Sensor.map((sensor) => {
         const requestSensorInfo = sensor.requestSensorInfo[0];
 
         let updateData;
@@ -968,14 +991,18 @@ export class SensorService {
             base_zero: requestSensorInfo.last_base_value,
             last_base_value: 0,
           };
-          console.log('Ноль выставлен - base_zero получает значение last_base_value, last_base_value становится 0');
+          console.log(
+            'Ноль выставлен - base_zero получает значение last_base_value, last_base_value становится 0',
+          );
         } else {
           // If set_null is false, swap base_zero to last_base_value and set base_zero to 0
           updateData = {
             last_base_value: requestSensorInfo.base_zero,
             base_zero: 0,
           };
-          console.log('Ноль сброшен - last_base_value получает значение base_zero, base_zero становится 0');
+          console.log(
+            'Ноль сброшен - last_base_value получает значение base_zero, base_zero становится 0',
+          );
         }
 
         return this.dbService.requestSensorInfo.updateMany({
@@ -1005,7 +1032,6 @@ export class SensorService {
         allSensors: await this.getAllSensorsWithNotStatus(),
         allObjects: allObjects,
       };
-
     } catch (error) {
       console.error('Error updating sensors:', error);
       return {
@@ -1014,7 +1040,6 @@ export class SensorService {
       };
     }
   }
-
 
   async changeStatusOneSensor(dto: any) {
     console.log('dto -', dto);
@@ -1099,13 +1124,17 @@ export class SensorService {
   async changeTimeRequestSensors(dto: any) {
     console.log('dto -', dto);
     try {
-      const setTimeRequestForAllSensors = await this.dbService.requestSensorInfo.updateMany({
-        data: {
-          periodicity: dto.periodicity, // New periodicity value
-        },
-      });
+      const setTimeRequestForAllSensors =
+        await this.dbService.requestSensorInfo.updateMany({
+          data: {
+            periodicity: dto.periodicity, // New periodicity value
+          },
+        });
       if (setTimeRequestForAllSensors) {
-        return { statusCode: HttpStatus.OK, message: 'Время запроса успешно изменено' };
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'Время запроса успешно изменено',
+        };
       } else {
         return {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -1136,7 +1165,8 @@ export class SensorService {
 
       // Цикл для удаления связанных записей из каждой таблицы, если они существуют
       for (const { table, field } of relatedTables) {
-        if (dto.id) { // Проверяем наличие id в DTO
+        if (dto.id) {
+          // Проверяем наличие id в DTO
           await this.dbService[table].deleteMany({
             where: { [field]: dto.id },
           });
@@ -1163,7 +1193,11 @@ export class SensorService {
         },
       });
 
-      return { statusCode: HttpStatus.OK, message: 'Датчик успешно удален из базы данных', allSensors: allSensors };
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Датчик успешно удален из базы данных',
+        allSensors: allSensors,
+      };
     } catch (error) {
       console.error('Ошибка при удалении датчика:', error);
       return {
@@ -1173,14 +1207,13 @@ export class SensorService {
     }
   }
 
-
   async importNewSensorsToObject(dto: any) {
     console.log('dto -', dto);
     this.saveSensorsData(dto.object_id, dto.sensorsData)
       .then(() => {
         console.log('Данные успешно записаны в базу данных');
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Произошла ошибка при записи данных:', error);
       });
   }

@@ -8,11 +8,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL_DEV")
+// }
+
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL_DEV")
+  url      = env(if env("NODE_ENV") == "production" then "DATABASE_URL_PROD" else "DATABASE_URL_DEV")
 }
-
 // Модель данных для журнала посещения приложения
 model appVisit {
   id      String   @id @default(uuid())

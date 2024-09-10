@@ -19,8 +19,7 @@ interface InputData {
 
 @Injectable()
 export class SensorsDataService {
-  constructor(private dbService: PrismaService) {
-  }
+  constructor(private dbService: PrismaService) {}
 
   async getSensorsData(dto: InputData) {
     console.log(dto);
@@ -45,13 +44,16 @@ export class SensorsDataService {
         },
       });
       // Group data by sensor_id
-      const groupedData = data.reduce((acc, item) => {
-        if (!acc[item.sensor_id]) {
-          acc[item.sensor_id] = [];
-        }
-        acc[item.sensor_id].push(item);
-        return acc;
-      }, {} as Record<string, dataFromSensor[]>);
+      const groupedData = data.reduce(
+        (acc, item) => {
+          if (!acc[item.sensor_id]) {
+            acc[item.sensor_id] = [];
+          }
+          acc[item.sensor_id].push(item);
+          return acc;
+        },
+        {} as Record<string, dataFromSensor[]>,
+      );
       return {
         statusCode: HttpStatus.OK,
         groupedData: groupedData,
@@ -59,20 +61,23 @@ export class SensorsDataService {
       };
     } catch (error) {
       console.error('Error fetching sensor data:', error);
-      return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при получении данных' };
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при получении данных',
+      };
     }
   }
 
   async getLastValuesDataForDynamicCharts(dto: InputData) {
     console.log(dto);
-    const { objectId,  sensorIds } = dto;
+    const { objectId, sensorIds } = dto;
 
     try {
       // Массив для хранения данных по всем датчикам
       const groupedData = [];
 
       // Проходим по каждому выбранному датчику
-      for (const sensorId of  sensorIds) {
+      for (const sensorId of sensorIds) {
         // Получаем последние 10 записей для текущего датчика
         const dataForSensor = await this.dbService.dataFromSensor.findMany({
           where: {
@@ -119,7 +124,6 @@ export class SensorsDataService {
         groupedData,
         message: 'Успешное получение данных.',
       };
-
     } catch (error) {
       // Обработка ошибок базы данных (например, ошибка соединения)
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -140,36 +144,36 @@ export class SensorsDataService {
   }
 
   async getLastValuesDataForSelectedObjectsAnsSensors(dto: InputData) {
-    console.log(dto)
+    console.log(dto);
     try {
       const selectedObject = await this.dbService.m_Object.findMany({
         where: {
-          id: dto.objectId
+          id: dto.objectId,
         },
         include: {
           Sensor: {
             where: {
               id: {
-                in: dto.sensorIds
-              }
+                in: dto.sensorIds,
+              },
             },
             include: {
               requestSensorInfo: true,
-              additional_sensor_info: true
-            }
-          }
-        }
+              additional_sensor_info: true,
+            },
+          },
+        },
       });
       return {
         statusCode: HttpStatus.OK,
         message: 'Успешное выполнение операции',
-        selectedObject: selectedObject
+        selectedObject: selectedObject,
       };
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Произошла ошибка при выполнении операции',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -200,11 +204,18 @@ export class SensorsDataService {
           message: 'Успешное получение данных',
         };
       } else {
-        return { statusCode: HttpStatus.NOT_FOUND, latestData: [], message: 'Данные не найдены' };
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          latestData: [],
+          message: 'Данные не найдены',
+        };
       }
     } catch (error) {
       console.error('Error fetching sensor data:', error);
-      return { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Ошибка 500 при получении данных' };
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Ошибка 500 при получении данных',
+      };
     }
   }
 
@@ -244,15 +255,15 @@ export class SensorsDataService {
           },
           created_at: {
             gte: new Date(startDate), // Дата начала периода
-            lte: new Date(endDate),   // Дата конца периода
+            lte: new Date(endDate), // Дата конца периода
           },
         },
         include: {
           sensor: {
             include: {
               additional_sensor_info: true, // Включение дополнительной информации о сенсоре, если она есть
-            }
-          }
+            },
+          },
         },
       });
 
@@ -271,7 +282,6 @@ export class SensorsDataService {
         groupedData: dataFromSensors,
         message: 'Успешное получение данных.',
       };
-
     } catch (error) {
       // Обработка ошибок базы данных (например, ошибка соединения)
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -291,13 +301,10 @@ export class SensorsDataService {
     }
   }
 
-
-
   async getForLineOneSensorsLastData(dto: InputData) {
     console.log(dto);
     const { sensorId, period } = dto;
     const { startDate, endDate } = period;
-
 
     try {
       // Ensure startDate and endDate are valid Date objects
@@ -346,7 +353,7 @@ export class SensorsDataService {
     }
   }
 
-// Example function to get additional information
+  // Example function to get additional information
   async getAddInfoData(sensorId: string) {
     // Implement the logic to fetch additional info based on sensorId
     // For demonstration purposes, returning a static object
@@ -354,7 +361,6 @@ export class SensorsDataService {
       limitValue: 100, // Example value
     };
   }
-
 
   async getOneSensorsLastData(dto: InputData) {
     console.log(dto);
@@ -365,11 +371,17 @@ export class SensorsDataService {
       },
     });
     if (oneData) {
-      return { statusCode: HttpStatus.OK, oneData: oneData, message: 'Успешное получение данных' };
+      return {
+        statusCode: HttpStatus.OK,
+        oneData: oneData,
+        message: 'Успешное получение данных',
+      };
     } else {
-      return { statusCode: HttpStatus.NOT_FOUND, oneData: [], message: 'Данные не найдены' };
+      return {
+        statusCode: HttpStatus.NOT_FOUND,
+        oneData: [],
+        message: 'Данные не найдены',
+      };
     }
   }
 }
-
-

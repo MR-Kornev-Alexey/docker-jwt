@@ -15,8 +15,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env(if env("NODE_ENV") == "production" then "DATABASE_URL_PROD" else "DATABASE_URL_DEV")
+  url      = env("DATABASE_URL")
+  // url      = env(if env("NODE_ENV") == "production" then "DATABASE_URL_PROD" else "DATABASE_URL_DEV")
 }
+
 // Модель данных для журнала посещения приложения
 model appVisit {
   id      String   @id @default(uuid())

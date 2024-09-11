@@ -261,7 +261,8 @@ export class SensorsDataService {
         include: {
           sensor: {
             include: {
-              additional_sensor_info: true, // Включение дополнительной информации о сенсоре, если она есть
+              additional_sensor_info: true,
+              requestSensorInfo: true,
             },
           },
         },

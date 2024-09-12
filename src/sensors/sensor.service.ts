@@ -520,7 +520,7 @@ export class SensorService {
   async getAllSensors(dto: { email: string }) {
     console.log('dto -', dto);
     // Проверяем доступ пользователя с помощью метода checkUserAccess из CheckService
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
     if (checkAccess) {
       return await this.getAllSensorsFromDb();
     } else {

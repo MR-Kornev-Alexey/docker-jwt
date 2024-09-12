@@ -28,7 +28,7 @@ export class SensorsDataController {
   @Post('get_last_values_data_for_selected_sensors')
   @HttpCode(200)
   async getLastValuesDataForSelectedObjectsAnsSensors(@Body() dto: any) {
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
     if (!checkAccess) {
       // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
@@ -41,7 +41,7 @@ export class SensorsDataController {
   @Post('get_last_values_data_for_dynamic_charts')
   @HttpCode(200)
   async getLastValuesDataForDynamicCharts(@Body() dto: any) {
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
     if (!checkAccess) {
       // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
@@ -73,7 +73,7 @@ export class SensorsDataController {
   @Post('get_grouped_data_for_selected_object')
   @HttpCode(200)
   async getGroupedDataForSelectedObject(@Body() dto: any) {
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
+    const checkAccess = await this.checkService.checkAllUserAccess(dto.email);
     if (!checkAccess) {
       // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);

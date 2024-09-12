@@ -1,17 +1,16 @@
 import {
   Body,
-  Controller, FileTypeValidator,
-  HttpCode, HttpException, HttpStatus, MaxFileSizeValidator,
-  NestInterceptor, ParseFilePipe, ParseFilePipeBuilder,
+  Controller,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  ParseFilePipeBuilder,
   Post,
-  Req,
-  Type,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { SensorService } from './sensor.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { sensorFormInput } from '../types/sensorFormInput';
 import { CheckService } from '../check/check.service';
 
 interface UploadFileDto {
@@ -19,15 +18,17 @@ interface UploadFileDto {
 }
 @Controller('sensors')
 export class SensorController {
-  constructor(private readonly sensorService: SensorService,
-              private checkService: CheckService) {
-  }
+  constructor(
+    private readonly sensorService: SensorService,
+    private checkService: CheckService,
+  ) {}
 
   @Post('set_new_sensor_to_object')
   @HttpCode(200)
   async setNewSensorToObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.createNewSensorToObject(dto);
@@ -37,16 +38,16 @@ export class SensorController {
   @HttpCode(200)
   async setOneSensorDuplicate(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setOneSensorDuplicate(dto);
   }
 
-
   @Post('get_all_sensors')
   @HttpCode(200)
-  async getAllObject(@Body() dto: { email: string }) {
+  async getAllSensors(@Body() dto: { email: string }) {
     return await this.sensorService.getAllSensors(dto);
   }
 
@@ -58,17 +59,18 @@ export class SensorController {
 
   @Post('get_all_data_about_one_sensor')
   @HttpCode(200)
-  async getAllDataAboutOneSensor(@Body() dto: { email: string, id: string }) {
+  async getAllDataAboutOneSensor(@Body() dto: { email: string; id: string }) {
     return await this.sensorService.getAllDataAboutOneSensor(dto);
   }
 
-
-
   @Post('set_request_data_for_sensor')
   @HttpCode(200)
-  async setRequestDataForOneSensor(@Body() dto: { email: string, requestDataForSensor: any }) {
+  async setRequestDataForOneSensor(
+    @Body() dto: { email: string; requestDataForSensor: any },
+  ) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setRequestDataForOneSensor(dto);
@@ -80,13 +82,12 @@ export class SensorController {
     return await this.sensorService.initAllNewTypeSensor(dto);
   }
 
-
-
   @Post('set_additional_parameter_for_sensor')
   @HttpCode(200)
   async setAdditionalParameterForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setAdditionalParameterForSensor(dto);
@@ -95,7 +96,8 @@ export class SensorController {
   @HttpCode(200)
   async setAdditionalDataForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setAdditionalDataForSensor(dto);
@@ -105,7 +107,8 @@ export class SensorController {
   @HttpCode(200)
   async setLogDataForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setLogDataForSensor(dto);
@@ -121,7 +124,8 @@ export class SensorController {
   @HttpCode(200)
   async changeNetNumberForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeNetNumberForSensor(dto);
@@ -131,7 +135,8 @@ export class SensorController {
   @HttpCode(200)
   async changeIPForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeIPForSensor(dto);
@@ -141,7 +146,8 @@ export class SensorController {
   @HttpCode(200)
   async importNewSensorsToObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.importNewSensorsToObject(dto);
@@ -150,20 +156,22 @@ export class SensorController {
   @Post('change_status_one_sensor_from_api')
   @HttpCode(200)
   async changeStatusOneSensor(@Body() dto: any) {
-    const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    const checkAccess = await this.checkService.checkUserAccessWithDispatcher(
+      dto.email,
+    );
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeStatusOneSensor(dto);
   }
 
-
-
   @Post('set_null_for_all_sensor_on_object')
   @HttpCode(200)
   async setNullForAllSensorOnObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setNullForAllSensorOnObject(dto);
@@ -173,7 +181,8 @@ export class SensorController {
   @HttpCode(200)
   async changeParametersForOneObject(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeParametersForOneObject(dto);
@@ -183,19 +192,19 @@ export class SensorController {
   @HttpCode(200)
   async changeDataForEmissionProcessing(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeDataForEmissionProcessing(dto);
   }
 
-
-
   @Post('change_designation_one_sensor_from_api')
   @HttpCode(200)
   async changeDesignationOneSensorFromApi(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeDesignationOneSensorFromApi(dto);
@@ -204,7 +213,8 @@ export class SensorController {
   @HttpCode(200)
   async changeLimitValuesOneSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeLimitValuesOneSensor(dto);
@@ -214,7 +224,8 @@ export class SensorController {
   @HttpCode(200)
   async deleteOneSensorFromApi(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.deleteOneSensorFromApi(dto);
@@ -224,7 +235,8 @@ export class SensorController {
   @HttpCode(200)
   async changeTimeRequestSensors(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.changeTimeRequestSensors(dto);
@@ -234,7 +246,8 @@ export class SensorController {
   @HttpCode(200)
   async setRequestParameterForSensor(@Body() dto: any) {
     const checkAccess = await this.checkService.checkUserAccess(dto.email);
-    if (!checkAccess) { // Проверяем, является ли пользователь администратором
+    if (!checkAccess) {
+      // Проверяем, является ли пользователь администратором
       throw new HttpException('Доступ запрещен', HttpStatus.FORBIDDEN);
     }
     return await this.sensorService.setRequestParameterForSensor(dto);
@@ -253,7 +266,7 @@ export class SensorController {
           },
         }),
     )
-      file: Express.Multer.File,
+    file: Express.Multer.File,
   ) {
     // console.log('Received body:', body);
     // console.log('Received file:', file);
@@ -262,6 +275,4 @@ export class SensorController {
     }
     return await this.sensorService.saveFileAboutSensor(file, body.id);
   }
-
 }
-

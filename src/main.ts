@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { join } from 'path';
 import express from 'express';
 import { GetDataSensorService } from './socketClient/getDataSensor.service';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
@@ -36,7 +35,7 @@ async function bootstrap() {
     preflightContinue: false,
     optionsSuccessStatus: 204,
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', '*']
+    allowedHeaders: ['Content-Type', 'Authorization', '*'],
   };
 
   app.enableCors(cors);
@@ -46,7 +45,7 @@ async function bootstrap() {
 
   try {
     await app.listen(5000, () => {
-      logger.log('info: '+ 'Server running on http://localhost:5000');
+      logger.log('info: ' + 'Server running on http://localhost:5000');
     });
 
     // Start socket client service
@@ -58,7 +57,9 @@ async function bootstrap() {
           try {
             await socketClientService.sendAndScheduleRequest(callbackFunction);
           } catch (error) {
-            logger.error('Error in sendAndScheduleRequest inside setTimeout: ' + error);
+            logger.error(
+              'Error in sendAndScheduleRequest inside setTimeout: ' + error,
+            );
           }
         }, 10000); // Call the function again in 5 seconds
       } catch (error) {

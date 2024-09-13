@@ -1,18 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
-import {SensorDetails} from '../types/sensor-details';
+import { SensorDetails } from '../types/sensor-details';
 
 @Injectable()
 export class SensorUtilsService {
-  constructor(private dbService: PrismaService, private telegramService:TelegramService) {}
+  constructor(
+    private dbService: PrismaService,
+    private telegramService: TelegramService,
+  ) {}
 
   private async sendNotifications(
     objectId: string,
     sensorId: string,
-    errorMessage: string
+    errorMessage: string,
   ): Promise<void> {
     const timestamp = new Date();
+    console.log('errorMessage before create --', errorMessage);
     try {
       // Use Promise.all to perform database operations concurrently
       await Promise.all([
@@ -36,13 +40,17 @@ export class SensorUtilsService {
     }
   }
 
-  async openingCheckAndSendMessageToTelegram(organizationId,errorsMessage) {
-    const users = await this.getAllUsersAboutOrganisation(organizationId)
-    if(users.length > 0){
+  async openingCheckAndSendMessageToTelegram(organizationId, errorsMessage) {
+    const users = await this.getAllUsersAboutOrganisation(organizationId);
+    console.log(users);
+    if (users.length > 0) {
       for (let i = 0; i < users.length; i++) {
         if (users[i].telegramInfo) {
-          console.log(new Date())
-          await this.telegramService.sendMessage(users[i].telegramId, errorsMessage);
+          console.log(new Date(), errorsMessage);
+          await this.telegramService.sendMessage(
+            users[i].telegramId,
+            errorsMessage,
+          );
           await this.delay(5000);
         }
       }
@@ -52,29 +60,26 @@ export class SensorUtilsService {
   async getAllUsersAboutOrganisation(id) {
     return this.dbService.m_User.findMany({
       where: {
-        organization_id: id
-      }
+        organization_id: id,
+      },
     });
   }
 
   async sendMessageAboutSensorAndObject(sensorId: string, inputMessage) {
-    const details:SensorDetails = await this.getSensorAndObjectDetails(sensorId);
-    const organizationId = details.object.organization.id
-    const users = await this.getAllUsersAboutOrganisation(organizationId)
-    console.log(users)
-    const missedCounter = details.additional_sensor_info[0].missedConsecutive
-    let iterationCounter = details.requestSensorInfo[0].counter
-    if(users.length > 0){
-      if(iterationCounter >= missedCounter){
+    const details: SensorDetails =
+      await this.getSensorAndObjectDetails(sensorId);
+    const organizationId = details.object.organization.id;
+    const users = await this.getAllUsersAboutOrganisation(organizationId);
+    const missedCounter = details.additional_sensor_info[0].missedConsecutive;
+    let iterationCounter = details.requestSensorInfo[0].counter;
+    if (users.length > 0) {
+      if (iterationCounter >= missedCounter) {
         const errorsMessage = `На объекте ${details.object.name} ${details.object.address} датчик: ${details.model} ${details.designation} ошибка: ${inputMessage}.\n${iterationCounter} раз подряд`;
-        for (let i = 0; i < users.length; i++) {
-          if (users[i].telegramInfo) {
-            console.log(new Date())
-            await this.telegramService.sendMessage(users[i].telegramId, errorsMessage);
-            await this.delay(5000);
-          }
-        }
-        await this.sendNotifications(details.object.id,sensorId,errorsMessage);
+        await this.sendNotifications(
+          details.object.id,
+          sensorId,
+          errorsMessage,
+        );
         await this.dbService.requestSensorInfo.update({
           where: {
             id: details.requestSensorInfo[0].id,
@@ -83,6 +88,16 @@ export class SensorUtilsService {
             counter: 0,
           },
         });
+        for (let i = 0; i < users.length; i++) {
+          if (users[i].telegramInfo) {
+            console.log(new Date());
+            await this.telegramService.sendMessage(
+              users[i].telegramId,
+              errorsMessage,
+            );
+            await this.delay(5000);
+          }
+        }
       } else {
         iterationCounter++; // Increment first, then use it for the update
         await this.dbService.requestSensorInfo.update({
@@ -98,9 +113,11 @@ export class SensorUtilsService {
   }
 
   private async delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  async getSensorAndObjectDetails(sensorId: string): Promise<SensorDetails | null>  {
+  async getSensorAndObjectDetails(
+    sensorId: string,
+  ): Promise<SensorDetails | null> {
     try {
       const sensorDetails = await this.dbService.new_Sensor.findUnique({
         where: {
@@ -111,15 +128,15 @@ export class SensorUtilsService {
           designation: true,
           object_id: true,
           additional_sensor_info: {
-            select:{
-              missedConsecutive: true
-            }
+            select: {
+              missedConsecutive: true,
+            },
           },
           requestSensorInfo: {
             select: {
-              id:true,
-              counter: true
-            }
+              id: true,
+              counter: true,
+            },
           },
           object: {
             select: {
@@ -131,13 +148,13 @@ export class SensorUtilsService {
                   id: true,
                   users: {
                     select: {
-                      telegramId:   true,
-                      telegramInfo: true
-                    }
-                  }
-                }
-              }
-            }
+                      telegramId: true,
+                      telegramInfo: true,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       });

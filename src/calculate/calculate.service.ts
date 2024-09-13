@@ -20,7 +20,6 @@ interface ParsedDataLS5 {
   distance: number;
 }
 
-
 // Интерфейс для результата вычислений
 interface CalculatedValues {
   lastValueX: number | null;
@@ -58,24 +57,28 @@ interface SensorInfo {
 }
 
 interface Entry {
-  sensor_id: string,
-  request_code: string,
-  answer_code: string,
-  created_at: Date,
+  sensor_id: string;
+  request_code: string;
+  answer_code: string;
+  created_at: Date;
 }
 
 @Injectable()
 export class CalculateService {
-  constructor(private dbService: PrismaService,
-              private sseService: SseService,
-              private telegramService: TelegramService,
-              private sensorUtilsService: SensorUtilsService) {}
+  constructor(
+    private dbService: PrismaService,
+    private sseService: SseService,
+    private telegramService: TelegramService,
+    private sensorUtilsService: SensorUtilsService,
+  ) {}
 
   async convertStringToNumber(stringValue) {
     // Проверяем, является ли строка допустимым числом с запятой, точкой или отрицательным знаком
     const numericSingleCommaOrDotRegex = /^-?[0-9]+([,.][0-9]{1,2})?$/;
     if (!numericSingleCommaOrDotRegex.test(stringValue)) {
-      throw new Error('Строка не является допустимым числом с запятой, точкой или с отрицательным знаком');
+      throw new Error(
+        'Строка не является допустимым числом с запятой, точкой или с отрицательным знаком',
+      );
     }
     // Определяем, содержит ли строка запятую или точку, и выполняем соответствующую операцию
     if (stringValue.includes(',')) {
@@ -88,14 +91,21 @@ export class CalculateService {
     // Если строка не содержит ни запятой, ни точки, преобразуем ее в целое число
     return parseInt(stringValue, 10);
   }
-  async calculateALLValues(model: string, code: string, coefficient: number): Promise<CalculatedValues> {
+  async calculateALLValues(
+    model: string,
+    code: string,
+    coefficient: number,
+  ): Promise<CalculatedValues> {
     switch (model) {
       case 'ИН-Д3': {
         const parsedData: ParsedDataInD3 = parseSensorInD3(code, coefficient);
         return {
           lastValueX: parsedData.angleX,
           lastValueY: parsedData.angleY,
-          lastBaseValue: calculateDistance(parsedData.angleX, parsedData.angleY),
+          lastBaseValue: calculateDistance(
+            parsedData.angleX,
+            parsedData.angleY,
+          ),
           lastValueZ: 0,
         };
       }
@@ -128,34 +138,54 @@ export class CalculateService {
   }
 
   async convertDataForCreate(entry: Entry, model: string): Promise<void> {
+    try {
+      const prevDataSensor: SensorInfo =
+        await this.dbService.requestSensorInfo.findFirst({
+          where: {
+            sensor_id: entry.sensor_id,
+          },
+        });
+      const foundLimitValues: FoundLimitValues =
+        await this.dbService.additionalSensorInfo.findFirst({
+          where: {
+            sensor_id: entry.sensor_id,
+          },
+        });
 
-    try{
-      const prevDataSensor: SensorInfo = await this.dbService.requestSensorInfo.findFirst({
-      where: {
-        sensor_id: entry.sensor_id,
-      },
-      });
-      const foundLimitValues: FoundLimitValues = await this.dbService.additionalSensorInfo.findFirst({
-        where: {
-          sensor_id: entry.sensor_id,
-        },
-      });
-
-      const calculateValues = await this.calculateALLValues(model, entry.answer_code, foundLimitValues.coefficient);
+      const calculateValues = await this.calculateALLValues(
+        model,
+        entry.answer_code,
+        foundLimitValues.coefficient,
+      );
       const lastValues = calculateValues.lastBaseValue;
       if (lastValues === null || lastValues === undefined) {
-        await this.handleCheckAndIncrementCounterError(prevDataSensor, foundLimitValues);
+        await this.handleCheckAndIncrementCounterError(
+          prevDataSensor,
+          foundLimitValues,
+        );
         return;
       }
       const limitValues = foundLimitValues.limitValue;
       const maxValues = prevDataSensor.max_base;
       const minValues = prevDataSensor.min_base;
       if (Math.abs(lastValues) >= Math.abs(limitValues)) {
-        await this.handleCheckAndIncrementCounterAlarm(prevDataSensor, foundLimitValues);
+        await this.handleCheckAndIncrementCounterAlarm(
+          prevDataSensor,
+          foundLimitValues,
+        );
       } else if (lastValues <= minValues) {
-        await this.handleCheckAndIncrementCounterMin(prevDataSensor,calculateValues, foundLimitValues);
-      } else if (lastValues >= maxValues) { // Fixed the comparison operator here
-        await this.handleCheckAndIncrementCounterMax(prevDataSensor, calculateValues, foundLimitValues);
+        await this.handleCheckAndIncrementCounterMin(
+          prevDataSensor,
+          calculateValues,
+          foundLimitValues,
+        );
+      } else if (lastValues >= maxValues) {
+        // Fixed the comparison operator here
+        await this.handleCheckAndIncrementCounterMax(
+          prevDataSensor,
+          calculateValues,
+          foundLimitValues,
+        );
       } else {
         await this.handleValidBaseValue(prevDataSensor, calculateValues);
       }
@@ -164,7 +194,10 @@ export class CalculateService {
     }
   }
 
-  private async handleCheckAndIncrementCounterAlarm(prevDataSensor: SensorInfo, foundLimitValues: FoundLimitValues): Promise<void> {
+  private async handleCheckAndIncrementCounterAlarm(
+    prevDataSensor: SensorInfo,
+    foundLimitValues: FoundLimitValues,
+  ): Promise<void> {
     const newValue = prevDataSensor.alarm_counter + 1;
     await this.dbService.requestSensorInfo.update({
       where: {
@@ -175,8 +208,8 @@ export class CalculateService {
       },
     });
     if (newValue >= foundLimitValues.emissionsQuantity) {
-      const message = `Выбросов подряд больше ${foundLimitValues.emissionsQuantity}`
-      await this.createNewLogInDB(prevDataSensor.sensor_id, message)
+      const message = `Выбросов подряд больше ${foundLimitValues.emissionsQuantity}`;
+      await this.createNewLogInDB(prevDataSensor.sensor_id, message);
       await this.dbService.requestSensorInfo.update({
         where: {
           id: prevDataSensor.id,
@@ -188,7 +221,10 @@ export class CalculateService {
     }
   }
 
-  private async handleCheckAndIncrementCounterError(prevDataSensor: SensorInfo, foundLimitValues: FoundLimitValues): Promise<void> {
+  private async handleCheckAndIncrementCounterError(
+    prevDataSensor: SensorInfo,
+    foundLimitValues: FoundLimitValues,
+  ): Promise<void> {
     const newValue = prevDataSensor.counter + 1;
     await this.dbService.requestSensorInfo.update({
       where: {
@@ -199,9 +235,9 @@ export class CalculateService {
       },
     });
     if (newValue >= foundLimitValues.errorsQuantity) {
-      const message = `Ошибок подряд больше ${foundLimitValues.errorsQuantity} раз`
+      const message = `Ошибок подряд больше ${foundLimitValues.errorsQuantity} раз`;
 
-      await this.createNewLogInDB(prevDataSensor.sensor_id, message)
+      await this.createNewLogInDB(prevDataSensor.sensor_id, message);
       await this.dbService.requestSensorInfo.update({
         where: {
           id: prevDataSensor.id,
@@ -215,35 +251,39 @@ export class CalculateService {
   private async handleCheckAndIncrementCounterMin(
     prevDataSensor: SensorInfo,
     calculateValues: CalculatedValues,
-    foundLimitValues: FoundLimitValues
+    foundLimitValues: FoundLimitValues,
   ): Promise<void> {
     const newValue = prevDataSensor.under_counter + 1;
 
     // Update the sensor info with the new under_counter value
-    await this.updateSensorInfo(prevDataSensor.id, calculateValues, { under_counter: newValue });
+    await this.updateSensorInfo(prevDataSensor.id, calculateValues, {
+      under_counter: newValue,
+    });
 
     // Check if the under_counter has reached the minQuantity limit
     if (newValue >= foundLimitValues.minQuantity) {
       // Reset the under_counter if the limit is reached
-      const message = `Значение ниже минимума ${foundLimitValues.minQuantity} раз подряд`
-      await this.createNewLogInDB(prevDataSensor.sensor_id, message)
+      const message = `Значение ниже минимума ${foundLimitValues.minQuantity} раз подряд`;
+      await this.createNewLogInDB(prevDataSensor.sensor_id, message);
       await this.resetCounter(prevDataSensor.id, 'under_counter');
     }
   }
   private async handleCheckAndIncrementCounterMax(
     prevDataSensor: SensorInfo,
     calculateValues: CalculatedValues,
-    foundLimitValues: FoundLimitValues
+    foundLimitValues: FoundLimitValues,
   ): Promise<void> {
     const newValue = prevDataSensor.over_counter + 1;
 
     // Update the sensor info with the new over_counter value
-    await this.updateSensorInfo(prevDataSensor.id, calculateValues, { over_counter: newValue });
+    await this.updateSensorInfo(prevDataSensor.id, calculateValues, {
+      over_counter: newValue,
+    });
 
     // Check if the over_counter has reached the maxQuantity limit
     if (newValue >= foundLimitValues.maxQuantity) {
       // Reset the over_counter if the limit is reached
-      const message = `Значение выше максимума ${foundLimitValues.maxQuantity} раз подряд`
+      const message = `Значение выше максимума ${foundLimitValues.maxQuantity} раз подряд`;
       await this.createNewLogInDB(prevDataSensor.sensor_id, message);
       await this.resetCounter(prevDataSensor.id, 'over_counter');
     }
@@ -251,9 +291,10 @@ export class CalculateService {
 
   private async handleValidBaseValue(
     prevDataSensor: SensorInfo,
-    calculateValues: CalculatedValues
+    calculateValues: CalculatedValues,
   ): Promise<void> {
-    const isValueChanged = calculateValues.lastBaseValue !== prevDataSensor.last_base_value;
+    const isValueChanged =
+      calculateValues.lastBaseValue !== prevDataSensor.last_base_value;
     // If the value has changed, reset counters and update the sensor info
     if (isValueChanged) {
       await this.updateSensorInfo(prevDataSensor.id, calculateValues, {
@@ -271,7 +312,7 @@ export class CalculateService {
   private async updateSensorInfo(
     sensorId: number,
     calculateValues: CalculatedValues,
-    counterUpdates: Partial<SensorInfo>
+    counterUpdates: Partial<SensorInfo>,
   ): Promise<void> {
     await this.dbService.requestSensorInfo.update({
       where: { id: sensorId },
@@ -285,7 +326,10 @@ export class CalculateService {
     });
   }
 
-  private async resetCounter(sensorId: number, counterName: keyof SensorInfo): Promise<void> {
+  private async resetCounter(
+    sensorId: number,
+    counterName: keyof SensorInfo,
+  ): Promise<void> {
     await this.dbService.requestSensorInfo.update({
       where: { id: sensorId },
       data: {
@@ -294,18 +338,32 @@ export class CalculateService {
     });
   }
 
-  private async createNewLogInDB (sensorId: string, message: string): Promise<void> {
-    const details = await this.sensorUtilsService.getSensorAndObjectDetails(sensorId)
+  private async createNewLogInDB(
+    sensorId: string,
+    message: string,
+  ): Promise<void> {
+    const details =
+      await this.sensorUtilsService.getSensorAndObjectDetails(sensorId);
     const organizationId = details.object.organization.id;
     const errorsMessage = `На объекте ${details.object.name} ${details.object.address} датчик: ${details.model} ${details.designation} ошибка: ${message} `;
-    console.log('errorsMessage ---', errorsMessage)
-    await this.sensorUtilsService.openingCheckAndSendMessageToTelegram(organizationId,errorsMessage);
-    // await this.telegramService.sendMessage(1081994928, errorsMessage);
-    await this.dbService.sensorErrorsLog.create( {  data: {
+    await this.dbService.sensorErrorsLog.create({
+      data: {
         sensor_id: sensorId,
         error_information: errorsMessage,
         created_at: new Date(),
-      }, })
+      },
+    });
+    await this.dbService.m_notifications.create({
+      data: {
+        object_id: details.object_id,
+        information: `На объекте ${details.object.name} ${details.object.address} датчик: ${details.model} ${details.designation} ошибка: ${message} `,
+        created_at: new Date(),
+      },
+    });
+    await this.sensorUtilsService.openingCheckAndSendMessageToTelegram(
+      organizationId,
+      errorsMessage,
+    );
   }
 
   private async resetAllCounters(sensorId: number): Promise<void> {
